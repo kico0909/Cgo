@@ -5,7 +5,7 @@ import (
 )
 
 // 404 模板
-var page_404 = template.Must(template.New("").Parse(
+var page_405_get = template.Must(template.New("").Parse(
 	`<!DOCTYPE html>
 			<html lang="hz-cn">
 			<head>
@@ -19,7 +19,12 @@ var page_404 = template.Must(template.New("").Parse(
 					.small{font-size: 16px; color: #ccc; margin-top: 20px;}
 					.small a{ }
 				</style>
-				<p class="big">404</p>
+				<p class="big">405</p>
+				<p class="big">Method not allowed</p>
 				<p class="small"><a href="/">返回首页</a></p>
 			</body>
 			</html>`))
+
+
+var page_405_post = template.Must(template.New("").Parse(
+	`{code:405, success: false, error: "Method not allowed"}`))
