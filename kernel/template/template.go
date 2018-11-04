@@ -1,24 +1,50 @@
 package template
 
 import (
-	"log"
 	"github.com/Cgo/kernel/config"
-	"github.com/Cgo/funcs"
+	log "github.com/sirupsen/logrus"
+	"net/http"
+	"io/ioutil"
+	"fmt"
+	"html/template"
 )
 
-func Init(conf *config.ConfigData){
-	// 缓存模板 - 启动立即进行缓存
-	if !conf.Server.IsStatic {
-		log.Println("初始化 [ 模板缓存 ] ...")
+type CgoTemplateType struct {
+	templateObj *template.Template
+	templatePath string
+}
 
-		//basePath,err := funcs.GetMyPath()
+func New(conf *config.ConfigData)*CgoTemplateType{
 
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
+	log.Info("功能初始化: 缓存模板("+conf.Server.TemplatePath+")				[ ok ]\n")
+	tmp := &CgoTemplateType{templatePath: conf.Server.TemplatePath }
+	tmp.CacheHtmlTemplate(conf.Server.TemplatePath)
+	return tmp
+}
 
-		log.Println(conf.Server)
+// 缓存所有 html 模板
+func (_self *CgoTemplateType) CacheHtmlTemplate(templatePath string) {
+	var err error
+	_self.templateObj, err  = template.ParseGlob( templatePath + "/*.html")
+	if err != nil {
+		log.Println("模板缓存异常: 没有模板文件可被缓存!")
+	}
 
-		funcs.CacheHtmlTemplate(conf.Server.TemplatePath)
+}
+
+
+// 渲染 基于缓存的模板
+func (_self *CgoTemplateType) RenderHtml(w http.ResponseWriter, templateName string, data interface{}) {
+	err := _self.templateObj.ExecuteTemplate(w, templateName, data)
+	if err != nil {
+		log.Info("模板创建页面错误----->", templateName, data)
+		log.Info(err)
 	}
 }
+
+// 基于文件的模板渲染
+func (_self *CgoTemplateType) RenderFile(w http.ResponseWriter, prefectPath string){
+	fileCont,_ := ioutil.ReadFile(prefectPath)
+	fmt.Fprintf(w,string(fileCont))
+}
+

@@ -5,16 +5,19 @@ package app
 */
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 	"strconv"
 	"strings"
-	"golang.org/x/crypto/acme/autocert"
 	"crypto/tls"
-	"golang.org/x/net/http2"
+
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/route"
+
+	// 如果此处报错,请 go get golang.org/x/net/http2 等包
+	"golang.org/x/net/http2"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 
@@ -56,9 +59,9 @@ func normalServerStart (router *route.RouterManager, conf *config.ConfigData) {
 
 	}
 
-	log.Println("服务器启动完成 [ 端口:"+strconv.FormatInt(conf.Server.Port, 10)+" ]...\n\n")
+	log.Info("服务器启动完成: (监听端口:"+strconv.FormatInt(conf.Server.Port, 10)+")					[ ok ]\n\n")
 
-	log.Fatal(server.ListenAndServe())
+	log.Fatalln(server.ListenAndServe())
 
 
 }
@@ -89,8 +92,8 @@ func httpsLetsServerStart(router *route.RouterManager, conf *config.ConfigData){
 		Handler: router,
 	}
 
-	log.Print(" TLS 服务器启动完成 ...\n\n")
-	log.Fatal(server.ListenAndServeTLS("", ""))
+	log.Info(" TLS 服务器启动完成 ...\n\n")
+	log.Fatalln(server.ListenAndServeTLS("", ""))
 }
 
 // 启动https服务器,需要填写证书路径
@@ -113,8 +116,8 @@ func httpsNormalServerStart(router *route.RouterManager, conf *config.ConfigData
 		Handler: router,
 	}
 
-	log.Println("HTTPS 服务器启动完成 [ 端口:"+strconv.FormatInt(conf.Server.Port, 10)+" ]...\n\n")
+	log.Info("HTTPS 服务器启动完成 [ 端口:"+strconv.FormatInt(conf.Server.Port, 10)+" ]...\n\n")
 
-	log.Fatal(server.ListenAndServeTLS(conf.TLS.CertPath, conf.TLS.KeyPath))
+	log.Fatalln(server.ListenAndServeTLS(conf.TLS.CertPath, conf.TLS.KeyPath))
 }
 

@@ -3,9 +3,9 @@ package session
 import (
 	_ "github.com/astaxie/beego/session/redis"
 	beegoSession "github.com/astaxie/beego/session"
-	"log"
 	"github.com/Cgo/kernel/config"
 	"net/http"
+	log "github.com/sirupsen/logrus"
 	)
 
 // Cgo的session 封装 TODO 把beego的session做了二次封装
@@ -23,12 +23,7 @@ var sessionManager CgoSession
 // 新建
 func (_self *CgoSession) New(conf *config.ConfigData)*CgoSession{
 
-	var result *CgoSession
 	var err error
-
-	if conf.Server.IsStatic && !conf.Session.Key {
-		return result
-	}
 
 	// 配置信息检测容错设置默认值
 	if conf.Session.SessionType == "" {
@@ -62,7 +57,7 @@ func (_self *CgoSession) New(conf *config.ConfigData)*CgoSession{
 
 	}
 
-	log.Println("初始化SESSION [",conf.Session.SessionType,"]类型")
+	log.Info("功能初始化: SESSION("+conf.Session.SessionType+")					[ ok ]")
 
 	sessionManager.manager, err = beegoSession.NewManager( conf.Session.SessionType, &sessionSetup )
 
@@ -82,7 +77,7 @@ func (_self *CgoSession) SessionStart(w http.ResponseWriter, r *http.Request) (b
 
 // 根据id 获得
 func (_self *CgoSession) GetSessionStore(sid string) (beegoSession.Store, error) {
-	return _self.GetSessionStore(sid)
+	return _self.manager.GetSessionStore(sid)
 }
 
 // 销毁全部

@@ -3,12 +3,11 @@ package command
 import (
 	cgoApp "github.com/Cgo/kernel/app"
 	"github.com/Cgo/kernel/config"
-	"github.com/Cgo/kernel/template"
 	"github.com/Cgo/route"
 	"github.com/Cgo/funcs"
 	"os/exec"
 	"os"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	)
 
@@ -39,7 +38,7 @@ func Run(comm *string, router *route.RouterManager, conf *config.ConfigData){
 func serverStart( router *route.RouterManager, conf *config.ConfigData){
 
 	// 初始化模板
-	template.Init(conf)
+	//template.Init(conf)
 
 	// 启动服务器
 	cgoApp.ServerStart(router, conf)
@@ -56,7 +55,7 @@ func serverStop(pid string){
 	if cmd.Start() != nil {
 		log.Fatal("关闭服务执行失败!")
 	}else{
-		log.Println("pid:[ " + pid + " ]进程被移除")
+		log.Info("pid:[ " + pid + " ]进程被移除")
 	}
 
 	cmd = exec.Command("rm", "-rf", infoPath)
@@ -83,7 +82,7 @@ func loadStartInfos()string{
 	cont, err := funcs.ReadFile(infoPath)
 
 	if err != nil {
-		log.Fatal("PID记录文件无法读取, 请手动结束应用!")
+		log.Fatalln("PID记录文件无法读取, 请手动结束应用!")
 	}
 
 	return string(cont)

@@ -3,11 +3,11 @@ package mysql
 import (
 	"github.com/Cgo/mysql"
 	"github.com/Cgo/kernel/config"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func New (conf *config.ConfigData) *mysql.DatabaseMysql {
-	log.Print("初始化MYSQL [ default ] 的链接 ... \n")
+	log.Info("功能初始化: MYSQL(default)					[ ok ]")
 	var tmp = &mysql.DatabaseMysql{}
 	tmp.Init("default",
 		conf.Mysql.Default.Username,

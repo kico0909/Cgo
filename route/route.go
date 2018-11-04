@@ -20,19 +20,19 @@ var (
 )
 
 type filter struct {	// 拦截器结构
-	path string					// 原始过滤器路由
-	rule *regexp.Regexp			// 过滤规则
-	f  *func( *RouterHandler )	// 符合规则 执行方法
-	BlockNext bool					// 过滤器被执行后是否继续执行余下的过滤器, 默认true
+	path 			string							// 原始过滤器路由
+	rule 			*regexp.Regexp					// 过滤规则
+	f  				*func( *RouterHandler )	(bool)	// 符合规则 执行方法 ; 返回是否阻塞路由的执行
+	BlockNext 		bool							// 过滤器被执行后是否阻塞过滤器判断, 默认false
 }
 
 // 路由管理员
 type RouterManager struct {
 
-	Routers []*routerChip		// 所有的路由
-	filter struct {				// 过滤器
-		beforeRoute []*filter	// 匹配路由之前进行拦截
-		afterRender []*filter 	// 渲染页面之后执行的拦截
+	Routers []*routerChip			// 所有的路由
+	filter struct {					// 过滤器
+		beforeRoute []*filter		// 匹配路由之前进行拦截
+		afterRender []*filter 		// 渲染页面之后执行的拦截
 	}
 	httpStatus struct{
 		notFound func(http.ResponseWriter)
@@ -47,15 +47,15 @@ type routerHandlerFunc func(handler *RouterHandler)
 
 // 一条路由的类型
 type routerChip struct {
-	H *RouterHandler										// 传入的原生的路由数据
-	Vars map[string]string									// 路由的传值
-	Methods map[string]bool									// 路由可被访问的模式
-	FilterFunc func(*RouterHandler)							// 当前路由的拦截器
-	IsRouterValue bool										// 是否是通过路由传值
+	H *RouterHandler							// 传入的原生的路由数据
+	Vars map[string]string						// 路由的传值
+	Methods map[string]bool						// 路由可被访问的模式
+	FilterFunc func(*RouterHandler)				// 当前路由的拦截器
+	IsRouterValue bool							// 是否是通过路由传值
 
-	path string												// 原始路由
-	regPath string											// 正则后的路由
-	viewRenderFunc func(*RouterHandler)						// 路由执行的视图
+	path string									// 原始路由
+	regPath string								// 正则后的路由
+	viewRenderFunc func(*RouterHandler)			// 路由执行的视图
 }
 
 type RouterHandler struct {
@@ -68,16 +68,23 @@ type RouterHandler struct {
 // 接口实现方法
 func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request){
 
-
+	var stopKey bool	// 禁止方法继续执行
 	// 检测路由前的拦截器
 	for _, v := range _self.filter.beforeRoute {
 		if v.rule.MatchString(r.URL.Path){	// 正则匹配
-			(*(v.f))( &RouterHandler{w,r,"", nil} )
-			log.Println("ok", v)
+			tmp := (*(v.f))( &RouterHandler{w,r,"", nil} )
+			if !stopKey {
+				stopKey = tmp
+			}
 			if v.BlockNext {
 				break
 			}
 		}
+	}
+
+	// 拦截器是否阻塞执行
+	if stopKey {
+		return
 	}
 
 	for _,v := range _self.Routers {
@@ -121,6 +128,7 @@ func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request){
 			return
 		}
 	}
+
 	// 没有路由情况下跳404
 	// 访问模式拒绝页面
 	switch strings.ToLower(r.Method ){
@@ -145,8 +153,7 @@ func (_self *RouterManager) Register(path string, f routerHandlerFunc ) *routerC
 
 // 针对路由的拦截器
 // 参数: 拦截器位置, 拦截器执行方法
-func (_self *RouterManager) InsertFilter(position string, pathRule string, f func(handler *RouterHandler), BlockNext ...bool){
-
+func (_self *RouterManager) InsertFilter(position string, pathRule string, f func(handler *RouterHandler)(bool), BlockNext ...bool){
 	re, err := regexp.Compile(handlerPathString2regexp(pathRule))
 	if err != nil {
 		log.Println("过滤器:[",position,"]路径匹配错误[",err,"]!")
@@ -230,7 +237,6 @@ func (_self *RouterManager) makeFileServe(handler http.Handler) routerHandlerFun
 	}
 
 }
-
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
