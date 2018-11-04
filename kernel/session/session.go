@@ -5,8 +5,8 @@ import (
 	beegoSession "github.com/astaxie/beego/session"
 	"github.com/Cgo/kernel/config"
 	"net/http"
-	log "github.com/sirupsen/logrus"
-	)
+	"log"
+)
 
 // Cgo的session 封装 TODO 把beego的session做了二次封装
 type CgoSession struct {
@@ -21,35 +21,35 @@ var (
 var sessionManager CgoSession
 
 // 新建
-func (_self *CgoSession) New(conf *config.ConfigData)*CgoSession{
+func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
 
 	var err error
 
 	// 配置信息检测容错设置默认值
-	if conf.Session.SessionType == "" {
-		conf.Session.SessionType = "memory"
+	if conf.SessionType == "" {
+		conf.SessionType = "memory"
 	}
 
-	if conf.Session.SessionName == "" {
-		conf.Session.SessionName = "_CHUNK"
+	if conf.SessionName == "" {
+		conf.SessionName = "_CHUNK"
 	}
 
-	if conf.Session.SessionLifeTime == 0 {
-		conf.Session.SessionLifeTime = 3600
+	if conf.SessionLifeTime == 0 {
+		conf.SessionLifeTime = 3600
 	}
 
-	sessionSetup.CookieName = conf.Session.SessionName + sessionEndName
-	sessionSetup.Gclifetime = conf.Session.SessionLifeTime
+	sessionSetup.CookieName = conf.SessionName + sessionEndName
+	sessionSetup.Gclifetime = conf.SessionLifeTime
 	sessionSetup.EnableSetCookie = true
 
 	// 初始化 session
-	switch conf.Session.SessionType{
+	switch conf.SessionType{
 
 	case "redis":
-		srHost := conf.Session.SessionRedis.Host
-		srPort := conf.Session.SessionRedis.Port
-		srNumber := conf.Session.SessionRedis.Dbname
-		srPassword := conf.Session.SessionRedis.Password
+		srHost := conf.SessionRedis.Host
+		srPort := conf.SessionRedis.Port
+		srNumber := conf.SessionRedis.Dbname
+		srPassword := conf.SessionRedis.Password
 		sessionSetup.ProviderConfig = srHost+`:`+srPort+`,`+srNumber+`,`+srPassword
 		break
 
@@ -57,9 +57,9 @@ func (_self *CgoSession) New(conf *config.ConfigData)*CgoSession{
 
 	}
 
-	log.Info("功能初始化: SESSION("+conf.Session.SessionType+")					[ ok ]")
+	log.Println("功能初始化: SESSION("+conf.SessionType+")	 --- [ ok ]")
 
-	sessionManager.manager, err = beegoSession.NewManager( conf.Session.SessionType, &sessionSetup )
+	sessionManager.manager, err = beegoSession.NewManager( conf.SessionType, &sessionSetup )
 
 	if err != nil {
 		log.Println(333,err)

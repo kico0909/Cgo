@@ -1,17 +1,24 @@
 package mysql
 
+/*
+ Cgo的mysql方法实现, 可读写分离, 读库要使用Query方法,写库要使用Exec方法, 否则会导致读写错乱
+*/
+
 import (
 	"database/sql"
 	_ "github.com/Cgo/go-sql-driver/mysql"
 	"log"
 	"errors"
 	"os"
-
+	"github.com/Cgo/kernel/config"
+	"strings"
 )
 
 type DbQueryReturn []map[string]string
 
-type dbinfoType struct {
+
+// 数据库链接信息
+type dbConnectionInfoType struct {
 	username string
 	password string
 	host string
@@ -20,113 +27,159 @@ type dbinfoType struct {
 	socket string
 }
 
-type DatabaseMysql struct {
-	dbInfo map[string]dbinfoType
-	conn map[string]*sql.DB
-	connectionName string
-	nowDBType string
+// 数据库分类
+type dbConnectionsInfoType struct {
+	r dbConnectionInfoType
+	w dbConnectionInfoType
 }
 
-/*
-私有方法, 用于连接数据库
-*/
-func (_self *DatabaseMysql) connectionDB() bool {
+// 链接分类
+type connType struct {
+	r *sql.DB
+	w *sql.DB
+}
 
-	username := _self.dbInfo[_self.connectionName].username
-	password := _self.dbInfo[_self.connectionName].password
-	host := _self.dbInfo[_self.connectionName].host
-	port := _self.dbInfo[_self.connectionName].port
-	dbname := _self.dbInfo[_self.connectionName].dbname
-	socket := _self.dbInfo[_self.connectionName].socket
+type DatabaseMysql struct {
+	sqlmode string	// 数据库模式: 单库, 读写分离
+	dbConnectionsInfo dbConnectionsInfoType
+	conn connType
+	//connectionName string
+	//nowDBType string
+}
 
-	var dataSourceName string
-
-	_, err := os.Stat(socket)
+func createConnectionInfo (conf dbConnectionInfoType) string{
+	//  链接写库
+	_, err := os.Stat(conf.socket)
 	// 存在套字链接的路径, 优先使用套子链接
-	if len(socket)>0 && err==nil {
-		dataSourceName = username + `:` + password + `@unix(` + socket + `)/` + dbname
+	if err==nil {
+		return conf.username + `:` + conf.password + `@unix(` + conf.socket + `)/` + conf.dbname
 	} else {
-		if (host == "localhost" || host == "127.0.0.1") && port=="3306" {
-
-			dataSourceName = username + `:` + password + `@` + `/` + dbname
-
+		if (conf.host == "localhost" || conf.host == "127.0.0.1") && conf.port=="3306" {
+			return conf.username + `:` + conf.password + `@/` + conf.dbname
 		}else{
-
-			dataSourceName = username + `:` + password + `@tcp(` + host + `:` + port + `)/` + dbname
-
+			return conf.username + `:` + conf.password + `@tcp(` + conf.host + `:` +conf. port + `)/` + conf.dbname
 		}
 	}
+}
 
-	_db, _err := sql.Open("mysql", dataSourceName)
+// 连接数据库
+func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 
-
+	// 连接写库
+	_dbw, _err := sql.Open("mysql", createConnectionInfo( _self.dbConnectionsInfo.w))
 	if _err != nil {
-		log.Println(_err)
-		return false;
+		log.Fatalln("数据库连接[读]出现错误: ",_err)
 	}
 
 	// 最大连接
-	_db.SetMaxOpenConns(200)
+	_dbw.SetMaxOpenConns(200)
 
 	// 保持连接
-	_db.SetMaxIdleConns(50)
+	_dbw.SetMaxIdleConns(50)
 
-	dbPing := _db.Ping()
+	dbPing_w := _dbw.Ping()
+	if dbPing_w!=nil {
+		log.Fatalln("数据库连接[读]无法Ping通: ")
+	}
+
+	_self.conn.w = _dbw
+
+	if _self.sqlmode == "default" {
+		_self.conn.r = _dbw
+		return _self
+	}
+
+	// 连接读库
+	_dbr, _err := sql.Open("mysql", createConnectionInfo( _self.dbConnectionsInfo.r))
+
+	if _err != nil {
+		log.Fatalln("数据库连接[写]出现错误: ",_err)
+	}
+
+	// 最大连接
+	_dbr.SetMaxOpenConns(200)
+
+	// 保持连接
+	_dbr.SetMaxIdleConns(50)
+
+	dbPing := _dbr.Ping()
 	if dbPing!=nil {
-		log.Println(dbPing)
-		return false
+		log.Fatalln("数据库连接[读]无法Ping通: ")
 	}
 
-	if _err == nil {
-		if _self.conn == nil {
-			_self.conn = make(map[string]*sql.DB )
-		}
-		_self.conn[ _self.connectionName ] = _db
-		return true
-	}
-	//*sql.DB
-	return false
+	_self.conn.r = _dbr
+
+	return _self
+
 }
 
 /*
 私有方法, 用于关闭数据库
 */
 func (_self *DatabaseMysql) closeDB(){
-	_self.conn[_self.connectionName].Close()
+	_self.conn.w.Close()
+	_self.conn.r.Close()
 }
 
-/*
-初始化,获得数据库配置信息
-*/
-func (_self *DatabaseMysql) Init(connectionName, usn, pwd, host, port, dbname,socket string)bool{
-	_self.connectionName = connectionName;
-	if _self.dbInfo == nil {
-		_self.dbInfo = make(map[string]dbinfoType)
+// 根据连接信息 初始化数据库
+func New(conf *config.ConfigMysqlOptions)*DatabaseMysql{
+
+	// 模式判断
+	var sqlMode = ""
+	if len(conf.ConnectionInfo)==2 {
+		sqlMode = "rw"
+	}else{
+		sqlMode = "default"
 	}
-	_self.dbInfo[connectionName] = dbinfoType{usn, pwd, host, port, dbname, socket}
-	return _self.connectionDB()
+
+	// 连接信息生成
+	var wDBinfo dbConnectionInfoType
+	var rDBinfo dbConnectionInfoType
+
+	if sqlMode == "default" {
+		wDBinfo.username = conf.ConnectionInfo[0].Username
+		wDBinfo.password = conf.ConnectionInfo[0].Password
+		wDBinfo.host = conf.ConnectionInfo[0].Host
+		wDBinfo.port = conf.ConnectionInfo[0].Port
+		wDBinfo.dbname = conf.ConnectionInfo[0].Dbname
+		wDBinfo.socket = conf.ConnectionInfo[0].Socket
+		rDBinfo = wDBinfo
+	}else{
+		for _,v := range conf.ConnectionInfo {
+			switch strings.ToUpper(v.Tag) {
+			case "W":	// 设置写库信息
+				wDBinfo.username = v.Username
+				wDBinfo.password = v.Password
+				wDBinfo.host = v.Host
+				wDBinfo.port = v.Port
+				wDBinfo.dbname = v.Dbname
+				wDBinfo.socket = v.Socket
+				break
+
+			case "R":
+				rDBinfo.username = v.Username
+				rDBinfo.password = v.Password
+				rDBinfo.host = v.Host
+				rDBinfo.port = v.Port
+				rDBinfo.dbname = v.Dbname
+				rDBinfo.socket = v.Socket
+				break
+			}
+		}
+	}
+
+	// 创建实例
+	tmp := &DatabaseMysql{ sqlmode: sqlMode, dbConnectionsInfo: dbConnectionsInfoType{ w: wDBinfo, r: rDBinfo }}
+
+	return tmp.connectionDB()
 }
 
-/*
-链接数据库, 根据配置文件中的配置信息去对数据库进行连接
-*/
-func (_self *DatabaseMysql) Connection(connectionName string) {
-	log.Println(connectionName)
-	_self.connectionName = connectionName
-	_self.connectionDB()
-}
 
-/*
-数据库查询操作
-*/
+// 数据库查询操作
 func (_self *DatabaseMysql) Query (sql string)  (results DbQueryReturn, err error) {
 
 	//var results DbQueryReturn   // 返回的类型
-	conn, ok := _self.conn[_self.connectionName]
-
-	if !ok {
-		return nil, errors.New("get mysql connection error!")
-	}
+	conn := _self.conn.r
 
 	rows, err := conn.Query(sql)
 	if err != nil {
@@ -164,9 +217,7 @@ func (_self *DatabaseMysql) Query (sql string)  (results DbQueryReturn, err erro
 	return results, err
 }
 
-/*
-非查询类数据库操作
-*/
+// 非查询类数据库操作
 func (_self *DatabaseMysql) Exec(query string, args ...interface{}) (sql.Result, error ){
-	return _self.conn[_self.connectionName].Exec(query)
+	return _self.conn.w.Exec(query)
 }

@@ -10,7 +10,7 @@ type letsEncrypt struct {
 	Domain 	string 	`json:"domain"`
 	Email 	string 	`json:"email"`
 }
-type tlsData struct {
+type ConfigTLSOptions struct {
 	Key 			bool 		`json:"open"`
 	LetsEncrypt 	bool 		`json:"letsEncrypt"`
 	LetsEncryptOpt 	letsEncrypt `json:"letsEncryptOpt"`
@@ -18,30 +18,39 @@ type tlsData struct {
 	CertPath 		string 		`json:"certPath"`
 
 }
+//type mysqlSetOpt struct {
+//	Username 	string `json:"username"`
+//	Password 	string `json:"password"`
+//	Host 		string `json:"host"`
+//	Port 		string `json:"port"`
+//	Dbname 		string `json:"dbname"`
+//	Socket 		string `json:"socket"`
+//}
 type mysqlSetOpt struct {
-	Username 	string `json:"username"`
-	Password 	string `json:"password"`
-	Host 		string `json:"host"`
-	Port 		string `json:"port"`
-	Dbname 		string `json:"dbname"`
-	Socket 		string `json:"socket"`
+	Tag			string	`json:"tag"`
+	Username 	string 	`json:"username"`
+	Password 	string 	`json:"password"`
+	Host 		string 	`json:"host"`
+	Port 		string 	`json:"port"`
+	Dbname 		string 	`json:"dbname"`
+	Socket 		string 	`json:"socket"`
 }
-type mysqlData struct {
-	Key 	bool	 	`json:"key"`
-	Default mysqlSetOpt `json:"default"`
+type ConfigMysqlOptions struct {
+	Key 			bool	 		`json:"key"`
+	ConnectionInfo 	[]mysqlSetOpt 	`json:"connectionInfo"`
 }
-type redisData struct {
+type ConfgigRedisOptions struct {
 	Key 	bool 					`json:"key"`
 	Setup 	reids.RedisSetupInfo	`json:"setup"`
 }
-type sessionOpt struct {
+type ConfigSessionOptions struct {
 	Key 			bool 					`json:"key"`
 	SessionType 	string 					`json:"sessionType"`
 	SessionName 	string 					`json:"sessionName"`
 	SessionLifeTime int64 					`json:"sessionLifeTime"`
 	SessionRedis 	reids.RedisSetupInfo 	`json:"sessionRedis"`
 }
-type serverOption struct {
+type ConfigServerOptions struct {
 	Port 			int64			`json:"port"`
 	StaticRouter 	string			`json:"staticRouter"`
 	StaticPath 		string			`json:"staticPath"`
@@ -50,7 +59,7 @@ type serverOption struct {
 	WriteTimeout 	time.Duration	`json:"writeTimeout"`
 	MaxHeaderBytes 	int				`json:"maxHeaderBytes"`
 }
-type casType struct {
+type ConfigCasOptions struct {
 	Key 				bool 		`json:"key"`
 	Url 				string 		`json:"url"`
 	WhiteList 			[]string 	`json:"whiteList"`
@@ -63,14 +72,15 @@ type casType struct {
 	APIErrCode			string		`json:"apiErrCode"`
 }
 
+
 type ConfigData struct {
-	Server 	serverOption				`json:"server"`
-	TLS 	tlsData 					`json:"tls"`
-	Mysql 	mysqlData 					`json:"mysql"`
-	Redis 	redisData 					`json:"redis"`
-	Session sessionOpt 					`json:"session"`
-	Custom 	map[string]interface{} 		`json:"custom"`
-	Cas 	casType						`json:"cas"`
+	Server 	ConfigServerOptions		`json:"server"`
+	TLS 	ConfigTLSOptions 		`json:"tls"`
+	Mysql 	ConfigMysqlOptions 		`json:"mysql"`
+	Redis 	ConfgigRedisOptions 	`json:"redis"`
+	Session ConfigSessionOptions 	`json:"session"`
+	Custom 	map[string]interface{} 	`json:"custom"`
+	Cas 	ConfigCasOptions		`json:"cas"`
 }
 
 type ConfigModule struct {

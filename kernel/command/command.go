@@ -7,9 +7,9 @@ import (
 	"github.com/Cgo/funcs"
 	"os/exec"
 	"os"
-	log "github.com/sirupsen/logrus"
 	"strconv"
-	)
+	"log"
+)
 
 const infoPath string = "./pid.txt"
 
@@ -21,7 +21,6 @@ func Run(comm *string, router *route.RouterManager, conf *config.ConfigData){
 	switch *comm {
 
 		case "start":
-			saveStartInfos(strconv.FormatInt(int64(os.Getpid()), 10))
 			serverStart(router,conf)
 			break
 
@@ -37,8 +36,8 @@ func Run(comm *string, router *route.RouterManager, conf *config.ConfigData){
 // 服务器初始化与启动
 func serverStart( router *route.RouterManager, conf *config.ConfigData){
 
-	// 初始化模板
-	//template.Init(conf)
+	// 记录PID
+	saveStartInfos(strconv.FormatInt(int64(os.Getpid()), 10))
 
 	// 启动服务器
 	cgoApp.ServerStart(router, conf)
@@ -55,7 +54,7 @@ func serverStop(pid string){
 	if cmd.Start() != nil {
 		log.Fatal("关闭服务执行失败!")
 	}else{
-		log.Info("pid:[ " + pid + " ]进程被移除")
+		log.Println("pid:[ " + pid + " ]进程被移除")
 	}
 
 	cmd = exec.Command("rm", "-rf", infoPath)

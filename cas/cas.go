@@ -2,7 +2,6 @@ package cas
 
 import (
 	"net/http"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"encoding/json"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 	"strconv"
 	"fmt"
 	"github.com/Cgo/funcs"
+	"log"
 )
 
 type CasSessionFunc interface {
@@ -68,7 +68,7 @@ var casTicket2Sessionid map[string]string
 // 初始化cas
 func NewCas(casUrl, sessionName, apiRouter,logoutRouter, logoutMethod, logoutReUrl, logoutValueName, apiErrCode string, wlist []string, sm interface{})*CasFilter{
 
-	log.Info("功能初始化: CAS验证							[ ok ]")
+	log.Println("功能初始化: CAS验证 --- [ ok ]")
 
 	return &CasFilter{	SessionInfoName: sessionName,
 						apiRouter: string4regexp(apiRouter),

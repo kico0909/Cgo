@@ -5,7 +5,6 @@ package app
 */
 
 import (
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 	"strconv"
@@ -18,6 +17,7 @@ import (
 	// 如果此处报错,请 go get golang.org/x/net/http2 等包
 	"golang.org/x/net/http2"
 	"golang.org/x/crypto/acme/autocert"
+	"log"
 )
 
 
@@ -59,7 +59,7 @@ func normalServerStart (router *route.RouterManager, conf *config.ConfigData) {
 
 	}
 
-	log.Info("服务器启动完成: (监听端口:"+strconv.FormatInt(conf.Server.Port, 10)+")					[ ok ]\n\n")
+	log.Println("服务器启动完成: (监听端口:"+strconv.FormatInt(conf.Server.Port, 10)+") --- [ ok ]\n\n")
 
 	log.Fatalln(server.ListenAndServe())
 
@@ -92,7 +92,7 @@ func httpsLetsServerStart(router *route.RouterManager, conf *config.ConfigData){
 		Handler: router,
 	}
 
-	log.Info(" TLS 服务器启动完成 ...\n\n")
+	log.Println("服务器启动完成:(TLS) --- [ ok ]")
 	log.Fatalln(server.ListenAndServeTLS("", ""))
 }
 
@@ -116,7 +116,7 @@ func httpsNormalServerStart(router *route.RouterManager, conf *config.ConfigData
 		Handler: router,
 	}
 
-	log.Info("HTTPS 服务器启动完成 [ 端口:"+strconv.FormatInt(conf.Server.Port, 10)+" ]...\n\n")
+	log.Println("服务器启动完成:(https) --- [ ok ]")
 
 	log.Fatalln(server.ListenAndServeTLS(conf.TLS.CertPath, conf.TLS.KeyPath))
 }

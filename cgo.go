@@ -36,8 +36,7 @@ var (
 
 func Run(){
 
-	// 1. 检测启动参数是否正确
-	comm, daemon = argumentHandler()
+	argumentHandler()
 
 	// 创建静默启动线程
 	if daemon {
@@ -47,17 +46,17 @@ func Run(){
 
 		// 2. 启动session 如果session 设置了
 		if Config.Conf.Session.Key {
-			Session = Session.New(&Config.Conf)
+			Session = Session.New(&Config.Conf.Session)
 		}
 
 		// 3. mysql 初始化
 		if Config.Conf.Mysql.Key {
-			Mysql = cgoMysql.New(&Config.Conf)
+			Mysql = cgoMysql.New(&Config.Conf.Mysql)
 		}
 
 		// 4. redis 初始化
 		if Config.Conf.Redis.Key {
-			Redis = cgoRedis.New(&Config.Conf)
+			Redis = cgoRedis.New(&Config.Conf.Redis)
 		}
 
 		// 5. 检测静态路径
@@ -95,8 +94,7 @@ func Run(){
 }
 
 // 命令行参数处理
-func argumentHandler()(comm string, daemon bool){
-
+func argumentHandler(){
 	for _,v := range os.Args {
 		if v == "start" && len(comm)<1 {
 			comm = "start"
@@ -111,9 +109,6 @@ func argumentHandler()(comm string, daemon bool){
 			daemon = true
 		}
 	}
-
-	return comm,daemon
-
 }
 
 // 静默启动
@@ -128,5 +123,7 @@ func createDaemon(){
 func init(){
 	// 初始化全局路由变量
 	Router = route.NewRouter()
+
+
 }
 

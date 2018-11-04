@@ -2,11 +2,11 @@ package template
 
 import (
 	"github.com/Cgo/kernel/config"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"io/ioutil"
 	"fmt"
 	"html/template"
+	"log"
 )
 
 type CgoTemplateType struct {
@@ -16,7 +16,7 @@ type CgoTemplateType struct {
 
 func New(conf *config.ConfigData)*CgoTemplateType{
 
-	log.Info("功能初始化: 缓存模板("+conf.Server.TemplatePath+")				[ ok ]\n")
+	log.Println("功能初始化: 缓存模板("+conf.Server.TemplatePath+") --- [ ok ]\n")
 	tmp := &CgoTemplateType{templatePath: conf.Server.TemplatePath }
 	tmp.CacheHtmlTemplate(conf.Server.TemplatePath)
 	return tmp
@@ -37,8 +37,8 @@ func (_self *CgoTemplateType) CacheHtmlTemplate(templatePath string) {
 func (_self *CgoTemplateType) RenderHtml(w http.ResponseWriter, templateName string, data interface{}) {
 	err := _self.templateObj.ExecuteTemplate(w, templateName, data)
 	if err != nil {
-		log.Info("模板创建页面错误----->", templateName, data)
-		log.Info(err)
+		log.Println("模板创建页面错误----->", templateName, data)
+		log.Println(err)
 	}
 }
 
