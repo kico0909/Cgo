@@ -15,26 +15,35 @@ import (
 	"github.com/Cgo/cas"
 	_ "github.com/Cgo/cas/cgo_suppport"
 	"github.com/Cgo/kernel/template"
-	)
+	"log"
+)
 
 
 var Config config.ConfigModule			// 配置
 var Router *route.RouterManager			// 路由
 var Session *session.CgoSession			// session
 var Redis *reids.DatabaseRedis			// redis
-var Mysql *mysql.DatabaseMysql			// mysql
+var Mysql *mysql.DatabaseMysql			// mysql TODO 后期改成数据模型的封装
 var Template *template.CgoTemplateType	// 模板缓存文件
 var Cas *cas.CasFilter					// cas 方法
+var Modules *module.DataModlues				// 数据模型
 
-type Module = module.DBModel
 type RouterHandler = route.RouterHandler
+type TableModule = module.TableModule
+type CasUserinfoType = cas.CasReqReturn
 
 var (
 	comm string
 	daemon bool
 )
 
-func Run(){
+func Run(confPath string, beforeStartEvents func()){
+
+	if len(confPath)<1 {
+		log.Fatal("需要指定配置文件的路径!")
+	}
+
+	Config.Set(confPath)
 
 	argumentHandler()
 
@@ -51,7 +60,12 @@ func Run(){
 
 		// 3. mysql 初始化
 		if Config.Conf.Mysql.Key {
+
+			// 启动mysql
 			Mysql = cgoMysql.New(&Config.Conf.Mysql)
+
+			// 初始化数据模型
+			Modules = module.New(Mysql)
 		}
 
 		// 4. redis 初始化
@@ -67,7 +81,7 @@ func Run(){
 		// 6. 尝试初始化cas
 		if Config.Conf.Cas.Key {
 			Cas = cas.NewCas(	Config.Conf.Cas.Url,
-								Config.Conf.Cas.CasSessionName,
+								Config.Conf.Cas.SessionName,
 								Config.Conf.Cas.APIPath,
 								Config.Conf.Cas.LogoutRouter,
 								Config.Conf.Cas.LogoutRequestMethod,
@@ -88,6 +102,8 @@ func Run(){
 		}
 	}
 
+	beforeStartEvents()
+
 	// 执行启动
 	command.Run(&comm, Router, &Config.Conf)
 
@@ -105,7 +121,7 @@ func argumentHandler(){
 		if v == "restart" && len(comm)<1 {
 			comm = "restart"
 		}
-		if v =="-d" || v == "-domain" {
+		if v == "-d" || v == "-domain" {
 			daemon = true
 		}
 	}

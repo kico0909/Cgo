@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"github.com/Cgo/redis"
 	"time"
-	)
+	"log"
+)
 type letsEncrypt struct {
 	Domain 	string 	`json:"domain"`
 	Email 	string 	`json:"email"`
@@ -64,7 +65,7 @@ type ConfigCasOptions struct {
 	Url 				string 		`json:"url"`
 	WhiteList 			[]string 	`json:"whiteList"`
 	APIPath 			string 		`json:"apiPath"`
-	CasSessionName 		string 		`json:"casSessionName"`
+	SessionName 		string 		`json:"sessionName"`
 	LogoutRouter		string		`json:"logoutRouter"`
 	LogoutRequestMethod	string		`json:"logoutRequestMethod"`
 	LogoutReUrl			string		`json:"logoutReUrl"`
@@ -88,6 +89,8 @@ type ConfigModule struct {
 }
 
 func (_self *ConfigModule) Set(path string)bool{
+
+	log.Println("功能初始化: Cgo配置文件("+path+") --- [ ok ]")
 
 	cont, err := ioutil.ReadFile(path)
 

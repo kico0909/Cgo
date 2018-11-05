@@ -31,23 +31,23 @@ type CasSessionFunc interface {
 type CasFilter struct {
 
 	// CAS 用的一些基础信息
-	casUrl 			string			// cas 服务器地址
+	casUrl 				string				// cas 服务器地址
 	mappingTicketSess	map[string]string	// ticket 和 session id 的映射
 
 	// Session 部分的设置
-	SessionInfoName string			// 用于保存session的名称
-	sess 			*CasSessionFunc	// session 管理器的接口
-	sessionManager	interface{}
+	SessionInfoName 	string				// 用于保存session的名称
+	sess 				*CasSessionFunc		// session 管理器的接口
+	sessionManager		interface{}
 
 	// Api路由的相关设置
-	apiRouter 				*regexp.Regexp		// 用于定义api走的路由
-	apiErrCode				string		// 当时API的路由时,验证不通过返回的code码
+	apiRouter 			*regexp.Regexp		// 用于定义api走的路由
+	apiErrCode			string				// 当时API的路由时,验证不通过返回的code码
 
 	// 登出部分的设置
-	logoutRequestRouter 	*regexp.Regexp		// 定义登出消息的接收路由
-	logoutMethod			string				// cas 登出消息推送的method
-	logoutReUrl		string			// 登出时跳转回的路由
-	logoutValueName	string			// 登出时跳转回的路由
+	logoutRequestRouter *regexp.Regexp		// 定义登出消息的接收路由
+	logoutMethod		string				// cas 登出消息推送的method
+	logoutReUrl			string				// 登出时跳转回的路由
+	logoutValueName		string				// 登出时跳转回的路由
 
 	// 检测的路由
 	casCheckRouter 			*regexp.Regexp		// 除api 和 白名单外 还需要经由cas验证的路由正则(默认全部路由)

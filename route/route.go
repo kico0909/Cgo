@@ -241,7 +241,7 @@ func (_self *RouterManager) makeFileServe(handler http.Handler) routerHandlerFun
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
 // 设置路由的Method
-func (_self *routerChip) Mehtods(methods... string) *routerChip{
+func (_self *routerChip) Method(methods... string) *routerChip{
 	_self.Methods = make(map[string]bool)
 	for _,v := range methods {
 		_self.Methods[strings.ToUpper(v)] = true
