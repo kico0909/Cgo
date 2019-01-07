@@ -7,26 +7,21 @@ import (
 	"time"
 	"log"
 )
+
 type letsEncrypt struct {
 	Domain 	string 	`json:"domain"`
 	Email 	string 	`json:"email"`
 }
+
 type ConfigTLSOptions struct {
-	Key 			bool 		`json:"open"`
+	Key 			bool 		`json:"key"`
 	LetsEncrypt 	bool 		`json:"letsEncrypt"`
 	LetsEncryptOpt 	letsEncrypt `json:"letsEncryptOpt"`
 	KeyPath 		string 		`json:"keyPath"`
 	CertPath 		string 		`json:"certPath"`
 
 }
-//type mysqlSetOpt struct {
-//	Username 	string `json:"username"`
-//	Password 	string `json:"password"`
-//	Host 		string `json:"host"`
-//	Port 		string `json:"port"`
-//	Dbname 		string `json:"dbname"`
-//	Socket 		string `json:"socket"`
-//}
+
 type mysqlSetOpt struct {
 	Tag			string	`json:"tag"`
 	Username 	string 	`json:"username"`
@@ -52,13 +47,14 @@ type ConfigSessionOptions struct {
 	SessionRedis 	reids.RedisSetupInfo 	`json:"sessionRedis"`
 }
 type ConfigServerOptions struct {
-	Port 			int64			`json:"port"`
-	StaticRouter 	string			`json:"staticRouter"`
-	StaticPath 		string			`json:"staticPath"`
-	TemplatePath 	string			`json:"templatePath"`
-	ReadTimeout		time.Duration	`json:"readTimeout"`
-	WriteTimeout 	time.Duration	`json:"writeTimeout"`
-	MaxHeaderBytes 	int				`json:"maxHeaderBytes"`
+	Port 					int64			`json:"port"`
+	StaticRouter 			string			`json:"staticRouter"`
+	StaticPath 				string			`json:"staticPath"`
+	TemplatePath 			string			`json:"templatePath"`
+	ReadTimeout				time.Duration	`json:"readTimeout"`
+	WriteTimeout 			time.Duration	`json:"writeTimeout"`
+	MaxHeaderBytes 			int				`json:"maxHeaderBytes"`
+	AllowOtherAjaxOrigin 	bool			`json:"allowOtherAjaxOrigin"`
 }
 type ConfigCasOptions struct {
 	Key 				bool 		`json:"key"`
@@ -74,6 +70,14 @@ type ConfigCasOptions struct {
 }
 
 
+type ConfigLoggerOptions struct {
+	Key bool	`json:"key"`
+	Path string	`json:"path"`
+	FileName string	`json:"fileName"`
+	AutoCutOff bool	`json:"autoCutOff"`
+}
+
+
 type ConfigData struct {
 	Server 	ConfigServerOptions		`json:"server"`
 	TLS 	ConfigTLSOptions 		`json:"tls"`
@@ -82,25 +86,39 @@ type ConfigData struct {
 	Session ConfigSessionOptions 	`json:"session"`
 	Custom 	map[string]interface{} 	`json:"custom"`
 	Cas 	ConfigCasOptions		`json:"cas"`
+	Log	ConfigLoggerOptions			`json:"log"`
 }
 
 type ConfigModule struct {
 	Conf ConfigData
 }
 
-func (_self *ConfigModule) Set(path string)bool{
+func configRunRes(success bool, path string) {
 
-	log.Println("功能初始化: Cgo配置文件("+path+") --- [ ok ]")
+	if success {
+		log.Println("功能初始化: Cgo配置文件("+path+") --- [ ok ]")
+	}else{
+		log.Fatalln("功能初始化: Cgo配置文件("+path+") --- [ fail ]")
+	}
+
+}
+
+func (_self *ConfigModule) Set(path string)bool{
 
 	cont, err := ioutil.ReadFile(path)
 
 	if err!=nil {
+		configRunRes(false, path)
 		return false
 	}
 
 	if err := json.Unmarshal(cont, &_self.Conf); err != nil {
+		log.Println(err)
+		configRunRes(false, path)
 		return false
 	}
+
+	configRunRes(true, path)
 
 	return true
 

@@ -34,6 +34,7 @@ func ServerStart(router *route.RouterManager, conf *config.ConfigData){
 	if conf.TLS.LetsEncrypt {
 		httpsLetsServerStart(router,conf)
 	}
+	// 正常https证书使用
 	httpsNormalServerStart(router,conf)
 }
 

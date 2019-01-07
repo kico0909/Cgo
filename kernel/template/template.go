@@ -16,7 +16,7 @@ type CgoTemplateType struct {
 
 func New(conf *config.ConfigData)*CgoTemplateType{
 
-	log.Println("功能初始化: 缓存模板("+conf.Server.TemplatePath+") --- [ ok ]\n")
+	log.Println("功能初始化: 缓存模板("+conf.Server.TemplatePath+") --- [ ok ]")
 	tmp := &CgoTemplateType{templatePath: conf.Server.TemplatePath }
 	tmp.CacheHtmlTemplate(conf.Server.TemplatePath)
 	return tmp

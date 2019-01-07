@@ -20,6 +20,14 @@ var (
 
 var sessionManager CgoSession
 
+func initSessionResult (success bool, sessionType string){
+	if success {
+		log.Println("功能初始化: SESSION("+sessionType+") --- [ ok ]")
+	}else{
+		log.Fatalln("功能初始化: SESSION("+sessionType+") --- [ ok ]")
+	}
+}
+
 // 新建
 func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
 
@@ -57,15 +65,18 @@ func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
 
 	}
 
-	log.Println("功能初始化: SESSION("+conf.SessionType+")	 --- [ ok ]")
+
 
 	sessionManager.manager, err = beegoSession.NewManager( conf.SessionType, &sessionSetup )
 
 	if err != nil {
+		initSessionResult(false, conf.SessionType)
 		log.Println(333,err)
 	}
 
 	go sessionManager.manager.GC()
+
+	initSessionResult(true, conf.SessionType)
 
 	return &sessionManager
 }

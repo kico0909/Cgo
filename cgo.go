@@ -1,6 +1,7 @@
 package Cgo
 
 import (
+	log2 "github.com/Cgo/kernel/logger"
 	"github.com/Cgo/mysql"
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/route"
@@ -27,6 +28,7 @@ var Mysql *mysql.DatabaseMysql			// mysql TODO 后期改成数据模型的封装
 var Template *template.CgoTemplateType	// 模板缓存文件
 var Cas *cas.CasFilter					// cas 方法
 var Modules *module.DataModlues				// 数据模型
+var Log *log2.Logger
 
 type RouterHandler = route.RouterHandler
 type TableModule = module.TableModule
@@ -40,7 +42,7 @@ var (
 func Run(confPath string, beforeStartEvents func()){
 
 	if len(confPath)<1 {
-		log.Fatal("需要指定配置文件的路径!")
+		log.Fatal("功能初始化失败: 需要指定配置文件的路径!")
 	}
 
 	Config.Set(confPath)
@@ -51,6 +53,8 @@ func Run(confPath string, beforeStartEvents func()){
 	if daemon {
 		createDaemon()
 	}
+
+	// 启动执行
 	if comm == "start" {
 
 		// 2. 启动session 如果session 设置了
@@ -100,9 +104,17 @@ func Run(confPath string, beforeStartEvents func()){
 		if len(Config.Conf.Server.TemplatePath)>0 {
 			Template = template.New(&Config.Conf)
 		}
-	}
 
-	beforeStartEvents()
+		// 8. 日志系统
+		if Config.Conf.Log.Key {
+			Log = log2.New(Config.Conf.Log.Path, Config.Conf.Log.FileName, Config.Conf.Log.AutoCutOff)
+		}else{
+			Log = log2.New("", "", false)
+		}
+
+		// 8. 前置回调方法执行
+		beforeStartEvents()
+	}
 
 	// 执行启动
 	command.Run(&comm, Router, &Config.Conf)
