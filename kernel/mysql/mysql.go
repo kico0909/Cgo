@@ -3,7 +3,7 @@ package mysql
 import (
 	"github.com/Cgo/mysql"
 	"github.com/Cgo/kernel/config"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 func New (conf *config.ConfigMysqlOptions) *mysql.DatabaseMysql {

@@ -16,6 +16,8 @@ const (
 	OneDay = 1 * 24 * 60 * 60
 )
 
+var std = olog.New(os.Stderr, "", 3)
+
 type Logger struct {
 	mode 				string				// 输出模式
 	file 				*os.File		// 输出到文件
@@ -30,7 +32,6 @@ type Logger struct {
 
 func New(path, prefix string, autoCut bool)(*Logger){
 
-
 	var resLogger *Logger
 
 	f, err := os.OpenFile(
@@ -39,12 +40,10 @@ func New(path, prefix string, autoCut bool)(*Logger){
 						0777)
 
 	if err != nil {
-		var logger = olog.New(os.Stderr, "", 3)
-
 		resLogger = &Logger{
 			file: f,
 			autoCutOff: autoCut,
-			logger: logger,
+			logger: std,
 			debugMode: false,
 
 			prefix: prefix,
@@ -231,5 +230,59 @@ func yesterdayDate(tag string) string {
 func getSurplusSecond()int64{
 	now := time.Now()
 	return int64(OneDay - now.Hour() * Hour - now.Minute() * Minute - now.Second() * Second)
+}
+
+
+//
+func Println (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[Normal]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+func Info (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[INFO]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+func Warn (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[WARN]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+func Error (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[ERROR]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+// debug模式下可以使用,设置为非debug 模式则不
+func Debug (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[DEBUG]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+
+// debug模式下可以使用,设置为非debug 模式则不
+func Fatalln (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[Fatal]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
+}
+
+func Fatal (v ...interface{}){
+	tmp := make([]interface{}, len(v),len(v))
+	tmp[0] = "[Fatal]"
+	tmp = append(tmp,v...)
+	std.Println(tmp...)
 }
 

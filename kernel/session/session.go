@@ -5,7 +5,7 @@ import (
 	beegoSession "github.com/astaxie/beego/session"
 	"github.com/Cgo/kernel/config"
 	"net/http"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 // Cgo的session 封装 TODO 把beego的session做了二次封装

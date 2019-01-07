@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"log"
+	"github.com/Cgo/kernel/logger"
 	"encoding/json"
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/redis"

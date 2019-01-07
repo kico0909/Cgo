@@ -6,7 +6,7 @@ import (
 	"strings"
 	"errors"
 	"github.com/Cgo/route/defaultPages"
-	"log"
+	"github.com/Cgo/kernel/logger"
 	"time"
 	"strconv"
 	)

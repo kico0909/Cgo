@@ -17,7 +17,7 @@ import (
 	// 如果此处报错,请 go get golang.org/x/net/http2 等包
 	"golang.org/x/net/http2"
 	"golang.org/x/crypto/acme/autocert"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 

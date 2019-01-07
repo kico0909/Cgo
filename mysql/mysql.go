@@ -7,7 +7,7 @@ package mysql
 import (
 	"database/sql"
 	_ "github.com/Cgo/go-sql-driver/mysql"
-	"log"
+	"github.com/Cgo/kernel/logger"
 	"errors"
 	"os"
 	"github.com/Cgo/kernel/config"

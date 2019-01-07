@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	"github.com/Cgo/kernel/logger"
 	"math"
 	"net"
 	"net/url"

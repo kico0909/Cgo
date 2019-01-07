@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"os"
 	"strconv"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 const infoPath string = "./pid.txt"

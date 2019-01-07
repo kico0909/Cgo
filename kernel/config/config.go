@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/Cgo/redis"
 	"time"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 type letsEncrypt struct {

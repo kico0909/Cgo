@@ -16,7 +16,7 @@ import (
 	"github.com/Cgo/cas"
 	_ "github.com/Cgo/cas/cgo_suppport"
 	"github.com/Cgo/kernel/template"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 
@@ -42,7 +42,7 @@ var (
 func Run(confPath string, beforeStartEvents func()){
 
 	if len(confPath)<1 {
-		log.Fatal("功能初始化失败: 需要指定配置文件的路径!")
+		log.Fatalln("功能初始化失败: 需要指定配置文件的路径!")
 	}
 
 	Config.Set(confPath)
@@ -56,6 +56,13 @@ func Run(confPath string, beforeStartEvents func()){
 
 	// 启动执行
 	if comm == "start" {
+
+		// 0. 日志系统初始化
+		if Config.Conf.Log.Key {
+			Log = log2.New(Config.Conf.Log.Path, Config.Conf.Log.FileName, Config.Conf.Log.AutoCutOff)
+		}else{
+			Log = log2.New("", "", false)
+		}
 
 		// 2. 启动session 如果session 设置了
 		if Config.Conf.Session.Key {
@@ -105,12 +112,7 @@ func Run(confPath string, beforeStartEvents func()){
 			Template = template.New(&Config.Conf)
 		}
 
-		// 8. 日志系统
-		if Config.Conf.Log.Key {
-			Log = log2.New(Config.Conf.Log.Path, Config.Conf.Log.FileName, Config.Conf.Log.AutoCutOff)
-		}else{
-			Log = log2.New("", "", false)
-		}
+
 
 		// 8. 前置回调方法执行
 		beforeStartEvents()

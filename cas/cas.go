@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"fmt"
 	"github.com/Cgo/funcs"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 type CasSessionFunc interface {
@@ -221,7 +221,7 @@ func string4regexp ( str string) *regexp.Regexp {
 
 	reg, err := regexp.Compile(str)
 	if err != nil {
-		log.Print("Router字符串转正则错误,返回默认转换正则", str, err)
+		log.Println("Router字符串转正则错误,返回默认转换正则", str, err)
 		reg, _ := regexp.Compile("^$")
 		return reg
 	}

@@ -4,8 +4,8 @@ import (
 	"github.com/Cgo/cas"
 	"github.com/Cgo/kernel/session"
 	beegoSession "github.com/astaxie/beego/session"
+	"github.com/Cgo/kernel/logger"
 	"net/http"
-	"log"
 )
 
 // cas 的 Cgo 对接
@@ -19,7 +19,7 @@ type cgoSession4cas struct {	//
 func (_self *cgoSession4cas) Start (w http.ResponseWriter, r *http.Request) {
 	tmp, err := _self.sessionManager.SessionStart(w,r)
 	if err != nil {
-		log.Println("cas - cgo session 的  session store 获得错误")
+		log.Println("cas -o session 的  session store 获得错误")
 	}
 	_self.ss = tmp
 }

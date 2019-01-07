@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"fmt"
 	"html/template"
-	"log"
+	"github.com/Cgo/kernel/logger"
 )
 
 type CgoTemplateType struct {
