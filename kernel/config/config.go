@@ -1,11 +1,12 @@
 package config
 
 import (
-	"io/ioutil"
 	"encoding/json"
-	"github.com/Cgo/redis"
-	"time"
 	"github.com/Cgo/kernel/logger"
+	"github.com/Cgo/redis"
+	//"github.com/Cgo/route"
+	"io/ioutil"
+	"time"
 )
 
 type letsEncrypt struct {
@@ -19,7 +20,6 @@ type ConfigTLSOptions struct {
 	LetsEncryptOpt 	letsEncrypt `json:"letsEncryptOpt"`
 	KeyPath 		string 		`json:"keyPath"`
 	CertPath 		string 		`json:"certPath"`
-
 }
 
 type mysqlSetOpt struct {
@@ -112,11 +112,14 @@ func (_self *ConfigModule) Set(path string)bool{
 		return false
 	}
 
+	// 解析json文件
 	if err := json.Unmarshal(cont, &_self.Conf); err != nil {
 		log.Println(err)
 		configRunRes(false, path)
 		return false
 	}
+
+
 
 	configRunRes(true, path)
 

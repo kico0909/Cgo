@@ -252,7 +252,7 @@ func (_self *CasFilter) getUserInfo4CasServer(w http.ResponseWriter, r *http.Req
 }
 
 // 通过CAS 去登录, 302 跳转到cas 服务器
-func (_self *CasFilter) ToLogin(w http.ResponseWriter, r *http.Request) {
+func (_self *CasFilter) ToLogin(w http.ResponseWriter, r *http.Request)  {
 	http.Redirect(w,r,_self.casUrl+"?service=" + getFullUrl(r, true), http.StatusFound)
 }
 
@@ -291,11 +291,19 @@ func (_self *CasFilter) clearUserSession (w http.ResponseWriter, r *http.Request
 func getFullUrl(r *http.Request, query interface{})string{
 	var part1 string
 	var host string
-	if r.TLS != nil {
-		part1 = "https://"
+
+	proto := r.Header.Get("X-Forwarded-Proto")
+	if len(proto) < 1 {
+		if r.TLS != nil {
+			part1 = "https://"
+		}else{
+			part1 = "http://"
+		}
 	}else{
-		part1 = "http://"
+		// 如果是nginx等代理工具转发的请求, 添加: [ proxy_set_header    X-Forwarded-Proto    $scheme; ] 即可获得URL的协议
+		part1 = proto + "://"
 	}
+
 	if (reflect.TypeOf(query)).Name() == "string"{
 		host = url.QueryEscape(part1 + r.Host + query.(string))
 	}else{
