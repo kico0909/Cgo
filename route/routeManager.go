@@ -1,14 +1,10 @@
 package route
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/kernel/logger"
 	"github.com/Cgo/kernel/session"
 	"github.com/Cgo/route/defaultPages"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -16,13 +12,9 @@ import (
 	"time"
 )
 
-var (
-	Method_Error          = errors.New("路由访问方式错误!")
-	RegExp_Url_Set_String = "{[a-z|A-Z|0-9|_]*}"
-	RegExp_Url_Set, _     = regexp.Compile(RegExp_Url_Set_String)
-	RegExp_Url_String     = "[a-z|A-Z|0-9|_|.]*"
-	RegExp_Url, _         = regexp.Compile("[a-z|A-Z|0-9|_|.]*")
-	defaultApiCode        = defaultApiCodeType{200, 400}
+const (
+	BEFORE_ROUTER = "beforeRouter"
+	AFTER_RENDER  = "afterRender"
 )
 
 // 配置出session
@@ -79,7 +71,6 @@ func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// 1. 匹配路由
 		if checkRouter(r.URL.Path, v.regPath) {
-
 			// 2. 匹配Method
 			if v.Methods == nil || v.Methods[r.Method] {
 				routerHandlerValue.path = v.path
@@ -137,7 +128,7 @@ func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // 注册一条新路由
-func (_self *RouterManager) Register(path string, f routerHandlerFunc, childRouter ...routerGroup) *routerChip {
+func (_self *RouterManager) Register(path string, f routerHandlerFunc) *routerChip {
 	if path == _self.staticRouter {
 		log.Fatalln("路由地址与静态文件路由地址冲突!\n[", path, "==>", _self.staticPath, "]")
 	}
@@ -149,19 +140,16 @@ func (_self *RouterManager) Register(path string, f routerHandlerFunc, childRout
 func (_self *RouterManager) InsertFilter(position string, pathRule string, f func(handler *RouterHandler) bool, BlockNext ...bool) {
 	re, err := regexp.Compile(handlerPathString2regexp(pathRule))
 	if err != nil {
-		log.Println("过滤器:[", position, "]路径匹配错误[", err, "]!")
 		re, _ = regexp.Compile(`[\D|\d]*`)
 	}
-
 	filterStruct := &filter{pathRule, re, &f, len(BlockNext) > 0 && BlockNext[0] == true}
-
 	switch position {
 
-	case "beforeRoute":
+	case BEFORE_ROUTER:
 		_self.filter.beforeRoute = append(_self.filter.beforeRoute, filterStruct)
 		break
 
-	case "afterRender":
+	case AFTER_RENDER:
 		_self.filter.afterRender = append(_self.filter.afterRender, filterStruct)
 		break
 
@@ -183,24 +171,12 @@ func (_self *RouterManager) SetStaticPath(router string, path string) {
 
 	// 注册一个静态文件的路由
 	_self.addRouter(handlerPathString2regexp(router+"**"), _self.makeFileServe(http.StripPrefix(router, http.FileServer(http.Dir(_self.staticPath)))))
-
 }
 
 // 设置静态文件访问目录
 func (_self *RouterManager) SetDefaultApiCode(success, fail int64) {
 	defaultApiCode.Success = success
 	defaultApiCode.Fail = fail
-}
-
-// 设置路由组 TODO 未完成的事业
-func (_self *RouterManager) Group(path string, f routerHandlerFunc, childRouter ...routerGroup) *routerChip {
-
-	return _self.addRouter(path, func(h *RouterHandler) {
-		f(h)
-		//for _,v := range childRouter{
-		//
-		//}
-	})
 }
 
 // 注册一条新路由
@@ -214,17 +190,13 @@ func (_self *RouterManager) addRouter(path string, f routerHandlerFunc) *routerC
 
 // 获得路由解析传值
 func (_self *RouterManager) getRouterValue(url string, rh *routerChip) map[string]string {
-
 	res := make(map[string]string)
 	reg, _ := regexp.Compile("[{|}]")
-
 	// 不是路由传值
 	if !rh.IsRouterValue {
 		return res
 	}
-
 	routeSet := strings.Split(rh.path, "/")
-
 	urlSet := strings.Split(url, "/")
 
 	for k, v := range routeSet {
@@ -233,72 +205,14 @@ func (_self *RouterManager) getRouterValue(url string, rh *routerChip) map[strin
 			res[reg.ReplaceAllString(v, "")] = urlSet[k]
 		}
 	}
-
 	return res
 }
 
 // 文件路由的处理方法
 func (_self *RouterManager) makeFileServe(handler http.Handler) routerHandlerFunc {
-
 	return func(h *RouterHandler) {
-
 		handler.ServeHTTP(h.W, h.R)
-
 	}
-
-}
-
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
-
-// 设置路由的Method
-func (_self *routerChip) Method(methods ...string) *routerChip {
-	_self.Methods = make(map[string]bool)
-	for _, v := range methods {
-		_self.Methods[strings.ToUpper(v)] = true
-	}
-	return _self
-}
-
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
-
-// 路由传值的原型链
-func (r *RouterHandler) Show(str string) {
-	fmt.Fprintf(r.W, str)
-}
-
-// 获得json类型的body传值
-func (r *RouterHandler) GetBodyValueToJson(res interface{}) {
-	defer r.R.Body.Close()
-	b, err := ioutil.ReadAll(r.R.Body)
-	if err != nil {
-		return
-	}
-	json.Unmarshal(b, res)
-}
-
-// API形式的json数据渲染页面(用于API的返回)
-type showForApiModeType struct {
-	Code    int64       `json:"code"`
-	Success bool        `json:"success"`
-	Message interface{} `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
-func (r *RouterHandler) ShowForApiMode(success bool, err, data interface{}, code ...int64) {
-	var result showForApiModeType
-	result.Success = success
-	if result.Success {
-		result.Code = defaultApiCode.Success
-	} else {
-		result.Code = defaultApiCode.Fail
-		if len(code) > 0 {
-			result.Code = code[0]
-		}
-	}
-	result.Message = err
-	result.Data = data
-	strByte, _ := json.Marshal(result)
-	fmt.Fprintf(r.W, string(strByte))
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----

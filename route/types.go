@@ -58,5 +58,12 @@ type defaultApiCodeType struct {
 	Fail    int64
 }
 
-// 路由组参数
-type routerGroup func(string, routerHandlerFunc, ...*routerGroup)
+// ------------------------------------------------------------------------
+
+//
+// 路由组 每一个Chip的返回值 方便上一级的处理
+type routerGroupFinilReturn struct {
+	Path        string
+	HandlerFunc routerHandlerFunc
+	Methods     string
+}

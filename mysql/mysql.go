@@ -6,25 +6,26 @@ package mysql
 
 import (
 	"database/sql"
-	_ "github.com/Cgo/go-sql-driver/mysql"
-	"github.com/Cgo/kernel/logger"
 	"errors"
-	"os"
+	_ "github.com/Cgo/go-sql-driver/mysql"
 	"github.com/Cgo/kernel/config"
+	"github.com/Cgo/kernel/logger"
+	"os"
 	"strings"
 )
 
 type DbQueryReturn []map[string]string
 
+type DBQueryReturnNew []interface{}
 
 // 数据库链接信息
 type dbConnectionInfoType struct {
 	username string
 	password string
-	host string
-	port string
-	dbname string
-	socket string
+	host     string
+	port     string
+	dbname   string
+	socket   string
 }
 
 // 数据库分类
@@ -40,24 +41,24 @@ type connType struct {
 }
 
 type DatabaseMysql struct {
-	sqlmode string	// 数据库模式: 单库, 读写分离
+	sqlmode           string // 数据库模式: 单库, 读写分离
 	dbConnectionsInfo dbConnectionsInfoType
-	conn connType
+	conn              connType
 	//connectionName string
 	//nowDBType string
 }
 
-func createConnectionInfo (conf dbConnectionInfoType) string{
+func createConnectionInfo(conf dbConnectionInfoType) string {
 	//  链接写库
 	_, err := os.Stat(conf.socket)
 	// 存在套字链接的路径, 优先使用套子链接
-	if err==nil {
+	if err == nil {
 		return conf.username + `:` + conf.password + `@unix(` + conf.socket + `)/` + conf.dbname
 	} else {
-		if (conf.host == "localhost" || conf.host == "127.0.0.1") && conf.port=="3306" {
+		if (conf.host == "localhost" || conf.host == "127.0.0.1") && conf.port == "3306" {
 			return conf.username + `:` + conf.password + `@/` + conf.dbname
-		}else{
-			return conf.username + `:` + conf.password + `@tcp(` + conf.host + `:` +conf. port + `)/` + conf.dbname
+		} else {
+			return conf.username + `:` + conf.password + `@tcp(` + conf.host + `:` + conf.port + `)/` + conf.dbname
 		}
 	}
 }
@@ -66,9 +67,9 @@ func createConnectionInfo (conf dbConnectionInfoType) string{
 func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 
 	// 连接写库
-	_dbw, _err := sql.Open("mysql", createConnectionInfo( _self.dbConnectionsInfo.w))
+	_dbw, _err := sql.Open("mysql", createConnectionInfo(_self.dbConnectionsInfo.w))
 	if _err != nil {
-		log.Fatalln("数据库连接[读]出现错误: ",_err)
+		log.Fatalln("数据库连接[读]出现错误: ", _err)
 	}
 
 	// 最大连接
@@ -78,7 +79,7 @@ func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 	_dbw.SetMaxIdleConns(50)
 
 	dbPing_w := _dbw.Ping()
-	if dbPing_w!=nil {
+	if dbPing_w != nil {
 		log.Fatalln("数据库连接[读]无法Ping通: ")
 	}
 
@@ -90,10 +91,10 @@ func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 	}
 
 	// 连接读库
-	_dbr, _err := sql.Open("mysql", createConnectionInfo( _self.dbConnectionsInfo.r))
+	_dbr, _err := sql.Open("mysql", createConnectionInfo(_self.dbConnectionsInfo.r))
 
 	if _err != nil {
-		log.Fatalln("数据库连接[写]出现错误: ",_err)
+		log.Fatalln("数据库连接[写]出现错误: ", _err)
 	}
 
 	// 最大连接
@@ -103,7 +104,7 @@ func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 	_dbr.SetMaxIdleConns(50)
 
 	dbPing := _dbr.Ping()
-	if dbPing!=nil {
+	if dbPing != nil {
 		log.Fatalln("数据库连接[读]无法Ping通: ")
 	}
 
@@ -116,19 +117,19 @@ func (_self *DatabaseMysql) connectionDB() *DatabaseMysql {
 /*
 私有方法, 用于关闭数据库
 */
-func (_self *DatabaseMysql) closeDB(){
+func (_self *DatabaseMysql) closeDB() {
 	_self.conn.w.Close()
 	_self.conn.r.Close()
 }
 
 // 根据连接信息 初始化数据库
-func New(conf *config.ConfigMysqlOptions)*DatabaseMysql{
+func New(conf *config.ConfigMysqlOptions) *DatabaseMysql {
 
 	// 模式判断
 	var sqlMode = ""
-	if len(conf.ConnectionInfo)==2 {
+	if len(conf.ConnectionInfo) == 2 {
 		sqlMode = "rw"
-	}else{
+	} else {
 		sqlMode = "default"
 	}
 
@@ -144,10 +145,10 @@ func New(conf *config.ConfigMysqlOptions)*DatabaseMysql{
 		wDBinfo.dbname = conf.ConnectionInfo[0].Dbname
 		wDBinfo.socket = conf.ConnectionInfo[0].Socket
 		rDBinfo = wDBinfo
-	}else{
-		for _,v := range conf.ConnectionInfo {
+	} else {
+		for _, v := range conf.ConnectionInfo {
 			switch strings.ToUpper(v.Tag) {
-			case "W":	// 设置写库信息
+			case "W": // 设置写库信息
 				wDBinfo.username = v.Username
 				wDBinfo.password = v.Password
 				wDBinfo.host = v.Host
@@ -169,21 +170,20 @@ func New(conf *config.ConfigMysqlOptions)*DatabaseMysql{
 	}
 
 	// 创建实例
-	tmp := &DatabaseMysql{ sqlmode: sqlMode, dbConnectionsInfo: dbConnectionsInfoType{ w: wDBinfo, r: rDBinfo }}
+	tmp := &DatabaseMysql{sqlmode: sqlMode, dbConnectionsInfo: dbConnectionsInfoType{w: wDBinfo, r: rDBinfo}}
 
 	return tmp.connectionDB()
 }
 
-
 // 数据库查询操作
-func (_self *DatabaseMysql) Query (sql string)  (results DbQueryReturn, err error) {
+func (_self *DatabaseMysql) Query(sql string) (results DbQueryReturn, err error) {
 
 	//var results DbQueryReturn   // 返回的类型
 	conn := _self.conn.r
 
 	rows, err := conn.Query(sql)
 	if err != nil {
-		return nil, errors.New("sql query error["+err.Error()+"]")
+		return nil, errors.New("sql query error[" + err.Error() + "]")
 	}
 
 	defer rows.Close()
@@ -207,7 +207,7 @@ func (_self *DatabaseMysql) Query (sql string)  (results DbQueryReturn, err erro
 			log.Println(err)
 		}
 		row := make(map[string]string) //每行数据
-		for k, v := range values { //每行数据是放在values里面，现在把它挪到row里
+		for k, v := range values {     //每行数据是放在values里面，现在把它挪到row里
 			key := cols[k]
 			row[key] = string(v)
 		}
@@ -218,6 +218,6 @@ func (_self *DatabaseMysql) Query (sql string)  (results DbQueryReturn, err erro
 }
 
 // 非查询类数据库操作
-func (_self *DatabaseMysql) Exec(query string, args ...interface{}) (sql.Result, error ){
+func (_self *DatabaseMysql) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return _self.conn.w.Exec(query)
 }

@@ -1,7 +1,9 @@
 package module
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"github.com/Cgo/mysql"
 	"log"
 	"strconv"
@@ -43,6 +45,7 @@ func (_self *TableModule) reset() {
 	_self.insert = ""
 	_self.update = ""
 	_self.execHeader = ""
+	_self.orderBy = ""
 }
 
 // 获得数据表的全部信息
@@ -60,8 +63,6 @@ func (_self *TableModule) Get(num ...int64) (mysql.DbQueryReturn, error) {
 	if len(num) == 2 {
 		_self.sqlStr += " limit " + strconv.FormatInt(num[0], 10) + "," + strconv.FormatInt(num[1], 10)
 	}
-
-	log.Println(_self.sqlStr)
 
 	_self.reset()
 
@@ -115,12 +116,35 @@ func (_self *TableModule) Where(s ...string) *TableModule {
 	}
 	return _self
 }
+func (_self *TableModule) NewForStruct(v interface{}, replace ...bool) *TableModule {
+
+	var replaceKey bool
+	if len(replace) > 1 {
+		replaceKey = replace[0]
+	}
+
+	var tmp interface{}
+	tmpMap := make(map[string]interface{})
+	b, _ := json.Marshal(v)
+	jsonDecoder := json.NewDecoder(bytes.NewBuffer(b))
+	jsonDecoder.UseNumber()
+	jsonDecoder.Decode(&tmp)
+	tmpMap = tmp.(map[string]interface{})
+
+	return _self.New(tmpMap, replaceKey)
+}
 
 // 添加新数据
-func (_self *TableModule) New(k2v map[string]interface{}, replace bool) *TableModule {
+func (_self *TableModule) New(k2v map[string]interface{}, replace ...bool) *TableModule {
+
+	var replaceKey bool
+	if len(replace) > 1 {
+		replaceKey = replace[0]
+	}
+
 	var keys []string
 	var values []string
-	if replace {
+	if replaceKey {
 		_self.execHeader = "replace into"
 	} else {
 		_self.execHeader = "insert into"
@@ -139,6 +163,9 @@ func (_self *TableModule) New(k2v map[string]interface{}, replace bool) *TableMo
 			break
 		case int64:
 			values = append(values, strconv.FormatInt(int64(v.(int64)), 10))
+			break
+		case json.Number:
+			values = append(values, string(v.(json.Number)))
 			break
 		case string:
 			values = append(values, "'"+v.(string)+"'")
@@ -160,6 +187,12 @@ func (_self *TableModule) Update(k2v map[string]interface{}) *TableModule {
 		case int:
 			tmp = strconv.FormatInt(int64(v.(int)), 10)
 			break
+		case int32:
+			tmp = strconv.FormatInt(int64(v.(int32)), 10)
+			break
+		case int64:
+			tmp = strconv.FormatInt(v.(int64), 10)
+			break
 		case string:
 			tmp = "'" + v.(string) + "'"
 			break
@@ -179,12 +212,13 @@ func (_self *TableModule) OrderBy(order ...string) *TableModule {
 // 查询操作
 func (_self *TableModule) Query(sqlStr string) (mysql.DbQueryReturn, error) {
 	_self.sqlStr = sqlStr
+	log.Println("query ==> ", _self.sqlStr)
 	return _self.origin.Query(_self.sqlStr)
 }
 
 // 执行操作
 func (_self *TableModule) Exec(sqlStr string) (sql.Result, error) {
 	_self.sqlStr = sqlStr
-	log.Println("exec", _self.sqlStr)
+	log.Println("exec ==> ", _self.sqlStr)
 	return _self.origin.Exec(_self.sqlStr)
 }

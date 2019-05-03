@@ -19,6 +19,10 @@ import (
 	"os/exec"
 )
 
+type RouterHandler = route.RouterHandler
+type TableModule = module.TableModule
+type CasUserinfoType = cas.CasReqReturn
+
 var Config config.ConfigModule         // 配置
 var Router *route.RouterManager        // 路由
 var Session *session.CgoSession        // session
@@ -29,13 +33,16 @@ var Cas *cas.CasFilter                 // cas 方法
 var Modules *module.DataModlues        // 数据模型
 var Log *cgologer.Logger               // 可输出到文件的日志类
 
+var RouterFilterKey = struct { // 拦截器的位置字段
+	BeforeRouter string
+	AfterRender  string
+}{
+	BeforeRouter: route.BEFORE_ROUTER,
+	AfterRender:  route.AFTER_RENDER}
+
 const (
 	VERSION = "1.0"
 )
-
-type RouterHandler = route.RouterHandler
-type TableModule = module.TableModule
-type CasUserinfoType = cas.CasReqReturn
 
 var (
 	comm   string
@@ -45,10 +52,14 @@ var (
 func Run(confPath string, beforeStartEvents func()) {
 
 	if len(confPath) < 1 {
-		log.Fatalln("功能初始化失败: 需要指定配置文件的路径!")
+		log.Fatalln("功能初始化: 需要指定配置文件的路径!")
 	}
 
-	Config.Set(confPath)
+	if !Config.Set(confPath) {
+		log.Fatalln("功能初始化: Cgo配置文件	---	[ fail ]")
+	} else {
+		log.Println("功能初始化: Cgo配置文件	---	[ ok ]")
+	}
 
 	route.SetConfig(Config.Conf)
 
@@ -92,30 +103,12 @@ func Run(confPath string, beforeStartEvents func()) {
 			Router.SetStaticPath(Config.Conf.Server.StaticRouter, Config.Conf.Server.StaticPath)
 		}
 
-		// 6. 尝试初始化cas
-		if Config.Conf.Cas.Key {
-			Cas = cas.NewCas(Config.Conf.Cas.Url,
-				Config.Conf.Cas.SessionName,
-				Config.Conf.Cas.APIPath,
-				Config.Conf.Cas.LogoutRouter,
-				Config.Conf.Cas.LogoutRequestMethod,
-				Config.Conf.Cas.LogoutReUrl,
-				Config.Conf.Cas.LogoutValueName,
-				Config.Conf.Cas.APIErrCode,
-				Config.Conf.Cas.WhiteList,
-				Session)
-
-			// cas 页面拦截器
-			Router.InsertFilter("beforeRoute", "/**", Cas.NewCasFilter())
-
-		}
-
-		// 7. 初始化模板
+		// 6. 初始化模板
 		if len(Config.Conf.Server.TemplatePath) > 0 {
 			Template = template.New(&Config.Conf)
 		}
 
-		// 8. 前置回调方法执行
+		// 7. 前置回调方法执行
 		beforeStartEvents()
 	}
 
