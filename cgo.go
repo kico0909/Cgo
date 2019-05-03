@@ -1,8 +1,6 @@
 package Cgo
 
 import (
-	"github.com/Cgo/cas"
-	_ "github.com/Cgo/cas/cgo_suppport"
 	"github.com/Cgo/kernel/command"
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/kernel/logger"
@@ -21,7 +19,6 @@ import (
 
 type RouterHandler = route.RouterHandler
 type TableModule = module.TableModule
-type CasUserinfoType = cas.CasReqReturn
 
 var Config config.ConfigModule         // 配置
 var Router *route.RouterManager        // 路由
@@ -29,7 +26,6 @@ var Session *session.CgoSession        // session
 var Redis *reids.DatabaseRedis         // redis
 var Mysql *mysql.DatabaseMysql         // mysql TODO 后期改成数据模型的封装
 var Template *template.CgoTemplateType // 模板缓存文件
-var Cas *cas.CasFilter                 // cas 方法
 var Modules *module.DataModlues        // 数据模型
 var Log *cgologer.Logger               // 可输出到文件的日志类
 
