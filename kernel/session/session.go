@@ -1,35 +1,35 @@
 package session
 
 import (
-	_ "github.com/astaxie/beego/session/redis"
-	beegoSession "github.com/astaxie/beego/session"
 	"github.com/Cgo/kernel/config"
-	"net/http"
 	"github.com/Cgo/kernel/logger"
+	beegoSession "github.com/astaxie/beego/session"
+	_ "github.com/astaxie/beego/session/redis"
+	"net/http"
 )
 
-// Cgo的session 封装 TODO 把beego的session做了二次封装
+// Cgo的session 封装 TODO 把beego的session做了二次封装,是否能自行封装(有没有必要)session? Beego的session 其实很好用
 type CgoSession struct {
 	manager *beegoSession.Manager
 }
 
 var (
 	sessionEndName = "_glsessn_"
-	sessionSetup beegoSession.ManagerConfig
+	sessionSetup   beegoSession.ManagerConfig
 )
 
 var sessionManager CgoSession
 
-func initSessionResult (success bool, sessionType string){
+func initSessionResult(success bool, sessionType string) {
 	if success {
-		log.Println("功能初始化: SESSION("+sessionType+") --- [ ok ]")
-	}else{
-		log.Fatalln("功能初始化: SESSION("+sessionType+") --- [ ok ]")
+		log.Println("功能初始化: SESSION(" + sessionType + ") --- [ ok ]")
+	} else {
+		log.Fatalln("功能初始化: SESSION(" + sessionType + ") --- [ ok ]")
 	}
 }
 
 // 新建
-func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
+func (_self *CgoSession) New(conf *config.ConfigSessionOptions) *CgoSession {
 
 	var err error
 
@@ -51,27 +51,25 @@ func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
 	sessionSetup.EnableSetCookie = true
 
 	// 初始化 session
-	switch conf.SessionType{
+	switch conf.SessionType {
 
 	case "redis":
 		srHost := conf.SessionRedis.Host
 		srPort := conf.SessionRedis.Port
 		srNumber := conf.SessionRedis.Dbname
 		srPassword := conf.SessionRedis.Password
-		sessionSetup.ProviderConfig = srHost+`:`+srPort+`,`+srNumber+`,`+srPassword
+		sessionSetup.ProviderConfig = srHost + `:` + srPort + `,` + srNumber + `,` + srPassword
 		break
 
 	default:
 
 	}
 
-
-
-	sessionManager.manager, err = beegoSession.NewManager( conf.SessionType, &sessionSetup )
+	sessionManager.manager, err = beegoSession.NewManager(conf.SessionType, &sessionSetup)
 
 	if err != nil {
 		initSessionResult(false, conf.SessionType)
-		log.Println(333,err)
+		log.Println(333, err)
 	}
 
 	go sessionManager.manager.GC()
@@ -83,7 +81,7 @@ func (_self *CgoSession) New(conf *config.ConfigSessionOptions)*CgoSession{
 
 // 启动session
 func (_self *CgoSession) SessionStart(w http.ResponseWriter, r *http.Request) (beegoSession.Store, error) {
-	return _self.manager.SessionStart(w,r)
+	return _self.manager.SessionStart(w, r)
 }
 
 // 根据id 获得
@@ -93,12 +91,11 @@ func (_self *CgoSession) GetSessionStore(sid string) (beegoSession.Store, error)
 
 // 销毁全部
 func (_self *CgoSession) SessionDestroy(w http.ResponseWriter, r *http.Request) {
-	_self.manager.SessionDestroy(w,r)
+	_self.manager.SessionDestroy(w, r)
 }
 
-
-func (_self *CgoSession) SessionRegenerateID(w http.ResponseWriter, r *http.Request) (beegoSession.Store) {
-	return _self.manager.SessionRegenerateID(w,r)
+func (_self *CgoSession) SessionRegenerateID(w http.ResponseWriter, r *http.Request) beegoSession.Store {
+	return _self.manager.SessionRegenerateID(w, r)
 }
 
 func (_self *CgoSession) GetActiveSession() int {
@@ -108,5 +105,3 @@ func (_self *CgoSession) GetActiveSession() int {
 func (_self *CgoSession) SetSecure(secure bool) {
 	_self.manager.SetSecure(secure)
 }
-
-
