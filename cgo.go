@@ -27,7 +27,6 @@ var Redis *reids.DatabaseRedis         // redis
 var Mysql *mysql.DatabaseMysql         // mysql TODO 后期改成数据模型的封装
 var Template *template.CgoTemplateType // 模板缓存文件
 var Modules *module.DataModlues        // 数据模型
-var Log *cgologer.Logger               // 可输出到文件的日志类
 
 var RouterFilterKey = struct { // 拦截器的位置字段
 	BeforeRouter string
@@ -48,11 +47,13 @@ var (
 func Run(confPath string, beforeStartEvents func()) {
 
 	if len(confPath) < 1 {
-		log.Fatalln("功能初始化: 需要指定配置文件的路径!")
+		log.Println("功能初始化: 需要指定配置文件的路径!")
+		os.Exit(0)
 	}
 
 	if !Config.Set(confPath) {
 		log.Fatalln("功能初始化: Cgo配置文件	---	[ fail ]")
+		os.Exit(0)
 	} else {
 		log.Println("功能初始化: Cgo配置文件	---	[ ok ]")
 	}
@@ -71,9 +72,9 @@ func Run(confPath string, beforeStartEvents func()) {
 
 		// 0. 日志系统初始化
 		if Config.Conf.Log.Key {
-			Log = cgologer.New(Config.Conf.Log.Path, Config.Conf.Log.FileName, Config.Conf.Log.AutoCutOff)
+			cgologer.New(Config.Conf.Log.Path, Config.Conf.Log.FileName, Config.Conf.Log.StopCutOff)
 		} else {
-			Log = cgologer.New("", "", false)
+			cgologer.New("", "", true)
 		}
 
 		// 2. 启动session 如果session 设置了

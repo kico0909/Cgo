@@ -6,7 +6,8 @@ import (
 	"regexp"
 )
 
-type filter struct { // 拦截器结构
+// 拦截器结构
+type filter struct {
 	path      string                     // 原始过滤器路由
 	rule      *regexp.Regexp             // 过滤规则
 	f         *func(*RouterHandler) bool // 符合规则 执行方法 ; 返回是否阻塞路由的执行
@@ -38,6 +39,7 @@ type routerChip struct {
 	Methods       map[string]bool      // 路由可被访问的模式
 	FilterFunc    func(*RouterHandler) // 当前路由的拦截器
 	IsRouterValue bool                 // 是否是通过路由传值
+	valueName     []string             // 路由传值的变量名
 
 	path           string               // 原始路由
 	regPath        string               // 正则后的路由

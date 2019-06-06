@@ -33,6 +33,7 @@ func SetConfig(c config.ConfigData) {
 
 // 接口实现方法
 func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 	// 禁止方法继续执行
 	var stopKey bool
 
@@ -73,10 +74,10 @@ func (_self *RouterManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if checkRouter(r.URL.Path, v.regPath) {
 			// 2. 匹配Method
 			if v.Methods == nil || v.Methods[r.Method] {
+
+				// 基础数据的赋值
 				routerHandlerValue.path = v.path
-				for k, v := range _self.getRouterValue(r.URL.Path, v) {
-					routerHandlerValue.Vars[k] = v
-				}
+				routerHandlerValue.Vars = _self.getRouterValue(r.URL.Path, v)
 				v.H = routerHandlerValue
 
 				// 3. 执行业务视图渲染
@@ -159,7 +160,6 @@ func (_self *RouterManager) InsertFilter(position string, pathRule string, f fun
 
 // 设置静态文件访问目录
 func (_self *RouterManager) SetStaticPath(router string, path string) {
-
 	// 检测是否有重复路由
 	for _, v := range _self.Routers {
 		if v.path == router {
@@ -170,7 +170,7 @@ func (_self *RouterManager) SetStaticPath(router string, path string) {
 	_self.staticPath = path
 
 	// 注册一个静态文件的路由
-	_self.addRouter(handlerPathString2regexp(router+"**"), _self.makeFileServe(http.StripPrefix(router, http.FileServer(http.Dir(_self.staticPath)))))
+	_self.addRouter(router+"**", _self.makeFileServe(http.StripPrefix(router, http.FileServer(http.Dir(_self.staticPath)))))
 }
 
 // 设置静态文件访问目录
@@ -179,23 +179,49 @@ func (_self *RouterManager) SetDefaultApiCode(success, fail int64) {
 	defaultApiCode.Fail = fail
 }
 
+// session manager 的获得
+func (s *RouterManager) GetSessionManager() *session.CgoSession {
+	return sess
+}
+
 // 注册一条新路由
 func (_self *RouterManager) addRouter(path string, f routerHandlerFunc) *routerChip {
-	rp, is := handlerPath(path)
-	innerH := &RouterHandler{path: path}
-	tmp := &routerChip{path: path, regPath: rp, viewRenderFunc: f, IsRouterValue: is, H: innerH}
+	valuename := _self.getRouterValueName(path)
+	tmp := &routerChip{
+		Vars:           make(map[string]string),
+		path:           path,
+		regPath:        handlerPathString2regexp(path),
+		viewRenderFunc: f,
+		IsRouterValue:  len(valuename) > 0,
+		H:              &RouterHandler{path: path},
+		valueName:      valuename}
 	_self.Routers = append(_self.Routers, tmp)
 	return tmp
 }
 
+// 解析传值路由的变量名
+func (_self *RouterManager) getRouterValueName(path string) []string {
+
+	replaceStr, _ := regexp.Compile("[{|}]")
+
+	r := RegExp_Url_Set.FindAllString(path, 100)
+	for i := range r {
+		r[i] = replaceStr.ReplaceAllString(r[i], "")
+	}
+	return r
+}
+
 // 获得路由解析传值
 func (_self *RouterManager) getRouterValue(url string, rh *routerChip) map[string]string {
+
 	res := make(map[string]string)
-	reg, _ := regexp.Compile("[{|}]")
 	// 不是路由传值
 	if !rh.IsRouterValue {
 		return res
 	}
+
+	reg, _ := regexp.Compile("[{|}]")
+
 	routeSet := strings.Split(rh.path, "/")
 	urlSet := strings.Split(url, "/")
 
@@ -226,22 +252,28 @@ func NewRouter() *RouterManager {
 // 把一个路由设置的URL转换成用于判断URL的正则
 func handlerPath(path string) (string, bool) {
 	// 创建一个正则
-	return "^" + RegExp_Url_Set.ReplaceAllLiteralString(path, RegExp_Url_String) + "$", !(RegExp_Url_Set.FindIndex([]byte(path)) == nil)
+	return handlerPathString2regexp(path), !(RegExp_Url_Set.FindIndex([]byte(path)) == nil)
 }
 
 // 路由匹配
 func checkRouter(url, path string) bool {
-	re, _ := regexp.Compile(path)
+	re, err := regexp.Compile(path)
+	if err != nil {
+		return false
+	}
 	return re.MatchString(url)
 }
 
 // 解析路由路径为正则字符串
 func handlerPathString2regexp(path string) string {
 	temp_time := strconv.FormatInt(time.Now().Unix(), 10)
+
 	// 双星
 	doubleStartReg, _ := regexp.Compile(`\*\*`)
+
 	// 单星
 	startReg, _ := regexp.Compile(`\*`)
+
 	// 双星转换的中间量
 	swapReg, _ := regexp.Compile(temp_time)
 
@@ -249,11 +281,13 @@ func handlerPathString2regexp(path string) string {
 	path = doubleStartReg.ReplaceAllString(path, `\S`+temp_time)
 
 	// 替换单星
-	path = "^" + startReg.ReplaceAllString(path, `[a-z|A-Z|0-9|_|.]*`) + "$"
+	path = "^" + startReg.ReplaceAllString(path, RegExp_Url_String) + "$"
 
 	// 替换中间变量
 	path = swapReg.ReplaceAllString(path, `*`)
 
-	return path
+	// 替换路由传值变量值
+	path = RegExp_Url_Set.ReplaceAllString(path, RegExp_Url_String)
 
+	return path
 }

@@ -6,6 +6,7 @@ import (
 	beegoSession "github.com/astaxie/beego/session"
 	_ "github.com/astaxie/beego/session/redis"
 	"net/http"
+	"strconv"
 )
 
 // Cgo的session 封装 TODO 把beego的session做了二次封装,是否能自行封装(有没有必要)session? Beego的session 其实很好用
@@ -39,7 +40,7 @@ func (_self *CgoSession) New(conf *config.ConfigSessionOptions) *CgoSession {
 	}
 
 	if conf.SessionName == "" {
-		conf.SessionName = "_CHUNK"
+		conf.SessionName = "_Cgo"
 	}
 
 	if conf.SessionLifeTime == 0 {
@@ -54,10 +55,10 @@ func (_self *CgoSession) New(conf *config.ConfigSessionOptions) *CgoSession {
 	switch conf.SessionType {
 
 	case "redis":
-		srHost := conf.SessionRedis.Host
-		srPort := conf.SessionRedis.Port
-		srNumber := conf.SessionRedis.Dbname
-		srPassword := conf.SessionRedis.Password
+		srHost := conf.Redis.Host
+		srPort := strconv.FormatInt(conf.Redis.Port, 10)
+		srNumber := strconv.FormatInt(conf.Redis.Dbname, 10)
+		srPassword := conf.Redis.Password
 		sessionSetup.ProviderConfig = srHost + `:` + srPort + `,` + srNumber + `,` + srPassword
 		break
 

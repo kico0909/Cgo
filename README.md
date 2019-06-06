@@ -44,7 +44,7 @@
     - Cgo.Session : Session
     - Cgo.Redis : redis缓存
     - Cgo.Mysql : 数据库
-    - Cgo.Log : 日志调用(可将日志输出至文件,可分割日志文件)
+    - log : 日志调用(可将日志输出至文件,可分割日志文件)
 - 全局类型 Cgo 提供自定义类型:
     - Cgo.RouterHandler : Cgo的路由类型
     - Cgo.TableModule : Cgo 的数据模型

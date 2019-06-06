@@ -26,26 +26,28 @@ type QywxApi struct {
 	REDIRECT_URI     string
 	STATE            string
 	TongXunLu_Secret string
+	Agentid          int64 // 当前应用的APPid
 
 	accessToken   string // 当前有效的token
 	token_expires int64  // token 失效时间
 }
 
 // 创建微信API 实例
-func New(CropID, Secret, REDIRECT_URI, STATE, TongXunLu_Secret string) *QywxApi {
+func New(CropID, Secret, REDIRECT_URI, STATE, TongXunLu_Secret string, Agentid int64) *QywxApi {
 	tmp := &QywxApi{
 		CorpID:           CropID,
 		Secret:           Secret,
 		REDIRECT_URI:     REDIRECT_URI,
 		STATE:            STATE,
-		TongXunLu_Secret: TongXunLu_Secret}
+		TongXunLu_Secret: TongXunLu_Secret,
+		Agentid:          Agentid}
 	token, err := getToken(CropID, Secret)
 	if err != nil {
+		log.Println("企业微信初始化失败: ", err)
 		return nil
 	}
 	tmp.accessToken = token.Access_token
 	tmp.token_expires = token.Expires_in + time.Now().Unix()
-
 	return tmp
 }
 
@@ -62,11 +64,7 @@ func get(url string) ([]byte, error) {
 	if err != nil {
 		return tmp, err
 	}
-
-	log.Println(string(body))
-
 	return body, nil
-
 }
 
 // 发送一个post请求
@@ -299,4 +297,96 @@ func (this *QywxApi) GetDepartment(dpId ...int64) (departmentType, error) {
 	json.Unmarshal(str, &data)
 
 	return data, nil
+}
+
+// 发送应用消息
+
+// 消息的主结构
+type TypeSendMessageType struct {
+	Touser  string `json:"touser"`
+	Toparty string `json:"toparty"`
+	Totag   string `json:"totag"`
+	Msgtype string `json:"msgtype"`
+	Agentid int64  `json:"agentid"`
+
+	Text     TypeMessageTypeForText     `json:"text"`     // 文本消息
+	Textcard TypeMessageTypeForTextCard `json:"textcard"` // 任务卡片消息
+	Markdown TypeMessageTypeForMarkDown `json:"markdown"` // 任务卡片消息
+	Taskcard TypeMessageTypeForTaskCard `json:"taskcard"` // 任务卡片消息
+
+	Safe int64 `json:"safe"`
+}
+
+// 消息结构
+type TypeMessageTypeForText struct { // 文本消息
+	Content string `json:"content"`
+}
+type TypeMessageTypeForTextCard struct { // 文本卡片消息
+	Title       string
+	Description string
+	Url         string
+	Btntxt      string
+}
+type TypeMessageTypeForMarkDown struct { // markdown消息
+	Content string `json:"content"`
+}
+type TypeMessageTypeForTaskCard struct { // 任务卡片消息
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Url         string `json:"url"`
+	Task_id     string `json:"task_id"`
+	Btn         []struct {
+		Key          string `json:"key"`
+		Name         string `json:"name"`
+		Replace_name string `json:"replace_name"`
+		Color        string `json:"color"`
+		Is_bold      bool   `json:"is_bold"`
+	} `json:"btn"`
+}
+
+// 返回的消息发送结果
+type returnFroSendType struct {
+	Errcode      int64  `json:"errcode"`
+	Errmsg       string `json:"errmsg"`
+	Invaliduser  string `json:"invaliduser"` // 不区分大小写，返回的列表都统一转为小写
+	Invalidparty string `json:"invalidparty"`
+	Invalidtag   string `json:"invalidtag"`
+}
+
+func (this *QywxApi) SendMessageForText(msgType string, msgByte []byte) returnFroSendType {
+
+	var data TypeSendMessageType
+	var res returnFroSendType
+	// token 超时
+	if time.Now().Unix() >= this.token_expires {
+		this.ResetToken()
+	}
+	requestUrl := "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=" + this.accessToken
+
+	err := json.Unmarshal(msgByte, &data)
+
+	res.Errcode = 400
+
+	if err != nil {
+
+		log.Println(err)
+		return res
+	}
+
+	log.Println(msgType)
+
+	switch msgType {
+	case "text", "textcard", "markdown", "taskcard":
+		data.Agentid = this.Agentid
+		data.Msgtype = msgType
+		break
+	default:
+		return res
+	}
+
+	b, _ := json.Marshal(data)
+	b, _ = post(requestUrl, string(b))
+	json.Unmarshal(b, &res)
+
+	return res
 }

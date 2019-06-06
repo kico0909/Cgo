@@ -23,8 +23,15 @@ func (dm *DataModlues) Add(tableName ...string) *TableModule {
 }
 
 type TableModule struct {
-	origin                                                           *mysql.DatabaseMysql
-	Table, value, where, orderBy, insert, update, execHeader, sqlStr string // Sql语句使用到的字符串
+	origin *mysql.DatabaseMysql
+	Table,
+	value,
+	where,
+	orderBy,
+	insert,
+	update,
+	execHeader,
+	sqlStr string // Sql语句使用到的字符串
 }
 
 // 连表
@@ -89,8 +96,6 @@ func (_self *TableModule) Save() (sql.Result, error) {
 
 	}
 	_self.reset()
-	log.Println("save", _self.sqlStr)
-
 	return _self.Exec(_self.sqlStr)
 }
 
@@ -118,11 +123,6 @@ func (_self *TableModule) Where(s ...string) *TableModule {
 }
 func (_self *TableModule) NewForStruct(v interface{}, replace ...bool) *TableModule {
 
-	var replaceKey bool
-	if len(replace) > 1 {
-		replaceKey = replace[0]
-	}
-
 	var tmp interface{}
 	tmpMap := make(map[string]interface{})
 	b, _ := json.Marshal(v)
@@ -131,14 +131,13 @@ func (_self *TableModule) NewForStruct(v interface{}, replace ...bool) *TableMod
 	jsonDecoder.Decode(&tmp)
 	tmpMap = tmp.(map[string]interface{})
 
-	return _self.New(tmpMap, replaceKey)
+	return _self.New(tmpMap, replace...)
 }
 
 // 添加新数据
 func (_self *TableModule) New(k2v map[string]interface{}, replace ...bool) *TableModule {
-
 	var replaceKey bool
-	if len(replace) > 1 {
+	if len(replace) > 0 {
 		replaceKey = replace[0]
 	}
 
@@ -171,7 +170,6 @@ func (_self *TableModule) New(k2v map[string]interface{}, replace ...bool) *Tabl
 			values = append(values, "'"+v.(string)+"'")
 			break
 		}
-
 	}
 	_self.insert = " (" + strings.Join(keys, ",") + ") Values (" + strings.Join(values, ",") + ") "
 	return _self
@@ -211,14 +209,14 @@ func (_self *TableModule) OrderBy(order ...string) *TableModule {
 
 // 查询操作
 func (_self *TableModule) Query(sqlStr string) (mysql.DbQueryReturn, error) {
-	_self.sqlStr = sqlStr
+	_self.sqlStr = sqlStr + ";"
 	log.Println("query ==> ", _self.sqlStr)
 	return _self.origin.Query(_self.sqlStr)
 }
 
 // 执行操作
 func (_self *TableModule) Exec(sqlStr string) (sql.Result, error) {
-	_self.sqlStr = sqlStr
+	_self.sqlStr = sqlStr + ";"
 	log.Println("exec ==> ", _self.sqlStr)
 	return _self.origin.Exec(_self.sqlStr)
 }

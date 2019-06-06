@@ -11,7 +11,7 @@ import (
 	"github.com/Cgo/kernel/config"
 	"github.com/Cgo/kernel/logger"
 	"os"
-	"strings"
+	"strconv"
 )
 
 type DbQueryReturn []map[string]string
@@ -26,6 +26,7 @@ type dbConnectionInfoType struct {
 	port     string
 	dbname   string
 	socket   string
+	charset  string
 }
 
 // 数据库分类
@@ -49,16 +50,21 @@ type DatabaseMysql struct {
 }
 
 func createConnectionInfo(conf dbConnectionInfoType) string {
+
+	if len(conf.charset) < 1 {
+		conf.charset = "utf8"
+	}
+
 	//  链接写库
 	_, err := os.Stat(conf.socket)
 	// 存在套字链接的路径, 优先使用套子链接
 	if err == nil {
-		return conf.username + `:` + conf.password + `@unix(` + conf.socket + `)/` + conf.dbname
+		return conf.username + `:` + conf.password + `@unix(` + conf.socket + `)/` + conf.dbname + "?charset=" + conf.charset
 	} else {
 		if (conf.host == "localhost" || conf.host == "127.0.0.1") && conf.port == "3306" {
-			return conf.username + `:` + conf.password + `@/` + conf.dbname
+			return conf.username + `:` + conf.password + `@/` + conf.dbname + "?charset=" + conf.charset
 		} else {
-			return conf.username + `:` + conf.password + `@tcp(` + conf.host + `:` + conf.port + `)/` + conf.dbname
+			return conf.username + `:` + conf.password + `@tcp(` + conf.host + `:` + conf.port + `)/` + conf.dbname + "?charset=" + conf.charset
 		}
 	}
 }
@@ -127,7 +133,7 @@ func New(conf *config.ConfigMysqlOptions) *DatabaseMysql {
 
 	// 模式判断
 	var sqlMode = ""
-	if len(conf.ConnectionInfo) == 2 {
+	if len(conf.Default.Host) < 1 {
 		sqlMode = "rw"
 	} else {
 		sqlMode = "default"
@@ -138,35 +144,30 @@ func New(conf *config.ConfigMysqlOptions) *DatabaseMysql {
 	var rDBinfo dbConnectionInfoType
 
 	if sqlMode == "default" {
-		wDBinfo.username = conf.ConnectionInfo[0].Username
-		wDBinfo.password = conf.ConnectionInfo[0].Password
-		wDBinfo.host = conf.ConnectionInfo[0].Host
-		wDBinfo.port = conf.ConnectionInfo[0].Port
-		wDBinfo.dbname = conf.ConnectionInfo[0].Dbname
-		wDBinfo.socket = conf.ConnectionInfo[0].Socket
+		wDBinfo.username = conf.Default.Username
+		wDBinfo.password = conf.Default.Password
+		wDBinfo.host = conf.Default.Host
+		wDBinfo.port = strconv.FormatInt(conf.Default.Port, 10)
+		wDBinfo.dbname = conf.Default.Dbname
+		wDBinfo.socket = conf.Default.Socket
+		wDBinfo.charset = conf.Default.Charset
 		rDBinfo = wDBinfo
 	} else {
-		for _, v := range conf.ConnectionInfo {
-			switch strings.ToUpper(v.Tag) {
-			case "W": // 设置写库信息
-				wDBinfo.username = v.Username
-				wDBinfo.password = v.Password
-				wDBinfo.host = v.Host
-				wDBinfo.port = v.Port
-				wDBinfo.dbname = v.Dbname
-				wDBinfo.socket = v.Socket
-				break
+		wDBinfo.username = conf.Write.Username
+		wDBinfo.password = conf.Write.Password
+		wDBinfo.host = conf.Write.Host
+		wDBinfo.port = strconv.FormatInt(conf.Write.Port, 10)
+		wDBinfo.dbname = conf.Write.Dbname
+		wDBinfo.socket = conf.Write.Socket
+		wDBinfo.charset = conf.Default.Charset
 
-			case "R":
-				rDBinfo.username = v.Username
-				rDBinfo.password = v.Password
-				rDBinfo.host = v.Host
-				rDBinfo.port = v.Port
-				rDBinfo.dbname = v.Dbname
-				rDBinfo.socket = v.Socket
-				break
-			}
-		}
+		rDBinfo.username = conf.Read.Username
+		rDBinfo.password = conf.Read.Password
+		rDBinfo.host = conf.Read.Host
+		rDBinfo.port = strconv.FormatInt(conf.Read.Port, 10)
+		rDBinfo.dbname = conf.Read.Dbname
+		rDBinfo.socket = conf.Read.Socket
+		rDBinfo.charset = conf.Read.Charset
 	}
 
 	// 创建实例
@@ -179,9 +180,7 @@ func New(conf *config.ConfigMysqlOptions) *DatabaseMysql {
 func (_self *DatabaseMysql) Query(sql string) (results DbQueryReturn, err error) {
 
 	//var results DbQueryReturn   // 返回的类型
-	conn := _self.conn.r
-
-	rows, err := conn.Query(sql)
+	rows, err := _self.conn.r.Query(sql)
 	if err != nil {
 		return nil, errors.New("sql query error[" + err.Error() + "]")
 	}
