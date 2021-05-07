@@ -1,7 +1,7 @@
 package route
 
 import (
-	"cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/kernel/logger"
 	"strings"
 )
 

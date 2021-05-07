@@ -1,8 +1,8 @@
 package WechatMiniProgram
 
 import (
-	log "cgo/core/kernel/logger"
-	"cgo/core/plugins/request"
+	log "github.com/kico0909/cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/plugins/request"
 	"encoding/json"
 	"errors"
 	"time"

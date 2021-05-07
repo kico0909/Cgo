@@ -1,10 +1,10 @@
 package route
 
 import (
-	"cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
-	session "cgo/core/kernel/session"
-	"cgo/core/route/defaultPages"
+	"github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
+	session "github.com/kico0909/cgo/core/kernel/session"
+	"github.com/kico0909/cgo/core/route/defaultPages"
 	"net/http"
 	"regexp"
 	"strconv"

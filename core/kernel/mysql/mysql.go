@@ -1,9 +1,9 @@
 package mysql
 
 import (
-	config "cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
-	mysql "cgo/core/mysql"
+	config "github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
+	mysql "github.com/kico0909/cgo/core/mysql"
 )
 
 func New(conf *config.ConfigMysqlOptions) *mysql.DatabaseMysql {

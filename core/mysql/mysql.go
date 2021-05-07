@@ -5,9 +5,9 @@ package mysql
 */
 
 import (
-	_ "cgo/lib/mysql"
-	"cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
+	_ "github.com/kico0909/cgo/lib/mysql"
+	"github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
 	"database/sql"
 	"encoding/json"
 	"errors"

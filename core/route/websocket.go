@@ -1,7 +1,7 @@
 package route
 
 import (
-	log "cgo/core/kernel/logger"
+	log "github.com/kico0909/cgo/core/kernel/logger"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"strconv"

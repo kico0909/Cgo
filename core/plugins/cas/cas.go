@@ -1,8 +1,8 @@
 package cas
 
 import (
-	"cgo"
-	"cgo/core/kernel/logger"
+	"github.com/kico0909/cgo"
+	"github.com/kico0909/cgo/core/kernel/logger"
 	"encoding/json"
 	"encoding/xml"
 	"io/ioutil"

@@ -1,7 +1,7 @@
 package dataModel
 
 import (
-	"cgo/core/mysql"
+	"github.com/kico0909/cgo/core/mysql"
 	"errors"
 	"log"
 	"reflect"

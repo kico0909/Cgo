@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
-	"cgo/core/route"
+	"github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/route"
 	//"github.com/golang/crypto/acme/autocert"
 	//"github.com/golang/net/http2"
 )

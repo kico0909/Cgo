@@ -1,8 +1,8 @@
 package template
 
 import (
-	"cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
 	"fmt"
 	"html/template"
 	"io/ioutil"

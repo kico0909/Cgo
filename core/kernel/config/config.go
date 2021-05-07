@@ -1,9 +1,9 @@
 package config
 
 import (
-	"cgo/core/kernel/logger"
-	"cgo/core/plugins/iniHandler"
-	"cgo/core/redis"
+	"github.com/kico0909/cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/plugins/iniHandler"
+	"github.com/kico0909/cgo/core/redis"
 	"time"
 )
 

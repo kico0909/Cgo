@@ -1,7 +1,7 @@
 package route
 
 import (
-	"cgo/core/route/defaultPages"
+	"github.com/kico0909/cgo/core/route/defaultPages"
 	"encoding/json"
 	"errors"
 	"io/ioutil"

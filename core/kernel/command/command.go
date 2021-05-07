@@ -1,11 +1,11 @@
 package command
 
 import (
-	"cgo/core/funcs"
-	cgoApp "cgo/core/kernel/app"
-	"cgo/core/kernel/config"
-	"cgo/core/kernel/logger"
-	"cgo/core/route"
+	"github.com/kico0909/cgo/core/funcs"
+	cgoApp "github.com/kico0909/cgo/core/kernel/app"
+	"github.com/kico0909/cgo/core/kernel/config"
+	"github.com/kico0909/cgo/core/kernel/logger"
+	"github.com/kico0909/cgo/core/route"
 	"os"
 	"os/exec"
 	"strconv"

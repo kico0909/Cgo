@@ -1,11 +1,11 @@
 package plugins
 
 import (
-	"cgo/core/plugins/WechatMiniProgram"
-	"cgo/core/plugins/amap"
-	"cgo/core/plugins/qyWeChat"
-	"cgo/core/plugins/request"
-	"cgo/core/plugins/weichat"
+	"github.com/kico0909/cgo/core/plugins/WechatMiniProgram"
+	"github.com/kico0909/cgo/core/plugins/amap"
+	"github.com/kico0909/cgo/core/plugins/qyWeChat"
+	"github.com/kico0909/cgo/core/plugins/request"
+	"github.com/kico0909/cgo/core/plugins/weichat"
 )
 
 type plugins struct {
