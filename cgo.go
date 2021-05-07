@@ -1,32 +1,37 @@
-package Cgo
+package cgo
 
 import (
-	"github.com/Cgo/kernel/command"
-	"github.com/Cgo/kernel/config"
-	"github.com/Cgo/kernel/logger"
-	cgologer "github.com/Cgo/kernel/logger"
-	"github.com/Cgo/kernel/module"
-	cgoMysql "github.com/Cgo/kernel/mysql"
-	cgoRedis "github.com/Cgo/kernel/redis"
-	"github.com/Cgo/kernel/session"
-	"github.com/Cgo/kernel/template"
-	"github.com/Cgo/mysql"
-	"github.com/Cgo/redis"
-	"github.com/Cgo/route"
+	"cgo/core/kernel/command"
+	"cgo/core/kernel/config"
+	"cgo/core/kernel/dataModel"
+	"cgo/core/kernel/logger"
+	cgologer "cgo/core/kernel/logger"
+	cgoMysql "cgo/core/kernel/mysql"
+	cgoRedis "cgo/core/kernel/redis"
+	"cgo/core/kernel/session"
+	"cgo/core/kernel/template"
+	"cgo/core/mysql"
+	"cgo/core/plugins"
+	reids "cgo/core/redis"
+	"cgo/core/route"
 	"os"
 	"os/exec"
 )
 
 type RouterHandler = route.RouterHandler
-type TableModule = module.TableModule
+type WSconn = route.WSConn
+type DataModle = dataModel.DataModle
 
-var Config config.ConfigModule         // 配置
-var Router *route.RouterManager        // 路由
-var Session *session.CgoSession        // session
-var Redis *reids.DatabaseRedis         // redis
-var Mysql *mysql.DatabaseMysql         // mysql TODO 后期改成数据模型的封装
-var Template *template.CgoTemplateType // 模板缓存文件
-var Modules *module.DataModlues        // 数据模型
+var Config config.ConfigModule                 // 配置
+var Router *route.RouterManager                // 路由
+var Session *session.CgoSession                // session
+var Redis *reids.DatabaseRedis                 // redis
+var MysqlDefault *mysql.DatabaseMysql          // mysql
+var MysqlLinks map[string]*mysql.DatabaseMysql // mysql 子链接
+var Template *template.CgoTemplateType         // 模板缓存文件
+var Modules *dataModel.DM                      // 数据模型(主要)
+var ModuleChilds map[string]*dataModel.DM      // 数据模型(子)
+var Plugins = plugins.NewPlugins()             // 一些便捷插件
 
 var RouterFilterKey = struct { // 拦截器的位置字段
 	BeforeRouter string
@@ -36,7 +41,7 @@ var RouterFilterKey = struct { // 拦截器的位置字段
 	AfterRender:  route.AFTER_RENDER}
 
 const (
-	VERSION = "1.0"
+	VERSION = "0.1.0"
 )
 
 var (
@@ -66,6 +71,7 @@ func Run(confPath string, beforeStartEvents func()) {
 	if daemon {
 		createDaemon()
 	}
+	comm = "start"
 
 	// 启动执行
 	if comm == "start" {
@@ -84,10 +90,20 @@ func Run(confPath string, beforeStartEvents func()) {
 
 		// 3. mysql 初始化
 		if Config.Conf.Mysql.Key {
+
 			// 启动mysql
-			Mysql = cgoMysql.New(&Config.Conf.Mysql)
+			MysqlDefault = cgoMysql.New(&Config.Conf.Mysql)
+
 			// 初始化数据模型
-			Modules = module.New(Mysql)
+			Modules = dataModel.New(MysqlDefault)
+			for k, v := range MysqlDefault.Links {
+				var tmp *dataModel.DM
+				tmp = dataModel.New(v)
+				if ModuleChilds == nil {
+					ModuleChilds = make(map[string]*dataModel.DM)
+				}
+				ModuleChilds[k] = tmp
+			}
 		}
 
 		// 4. redis 初始化
