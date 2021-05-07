@@ -1,9 +1,9 @@
 package route
 
 import (
-	"github.com/kico0909/cgo/core/route/defaultPages"
 	"encoding/json"
 	"errors"
+	"github.com/kico0909/cgo/core/route/defaultPages"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -129,7 +129,7 @@ func (r *RouterHandler) GetFormData(res interface{}) error {
 func (r *RouterHandler) GetFormFile(valueKey string, res interface{}) (multipart.File, *multipart.FileHeader) {
 	formFile, header, err := r.R.FormFile(valueKey)
 	if err != nil {
-		log.Println("Get form file failed: %s\n", err)
+		log.Println("Get form file failed: %s\n", err.Error())
 		return nil, nil
 	}
 	return formFile, header
