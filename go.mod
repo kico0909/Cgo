@@ -1,4 +1,4 @@
-module cgo
+module github.com/kico0909/cgo
 
 go 1.15
 
