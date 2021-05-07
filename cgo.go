@@ -41,7 +41,7 @@ var RouterFilterKey = struct { // 拦截器的位置字段
 	AfterRender:  route.AFTER_RENDER}
 
 const (
-	VERSION = "0.1.0"
+	VERSION = "0.1.1"
 )
 
 var (
